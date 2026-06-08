@@ -630,9 +630,23 @@ function initFirebase() {
       isFirebaseInitialized = false;
       return false;
     }
-    if (firebase.apps.length > 0) {
-      firebase.app().delete();
+
+    // Detach old listener if any
+    if (firebaseListener && typeof firebase !== 'undefined') {
+      try { firebase.database().ref('calltrack').off('value', firebaseListener); } catch(e) {}
+      firebaseListener = null;
     }
+
+    // Delete existing app before re-initializing
+    if (firebase.apps.length > 0) {
+      try { firebase.app().delete(); } catch(e) {}
+    }
+    
+    // Auto-detect missing databaseURL if projectId is present
+    if (!config.databaseURL && config.projectId) {
+      config.databaseURL = `https://${config.projectId}-default-rtdb.firebaseio.com`;
+    }
+
     firebase.initializeApp(config);
     sharedDbAvailable = true;
     isFirebaseInitialized = true;
@@ -759,39 +773,52 @@ function openFirebaseSetup() {
 }
 
 function saveFirebaseConfigUI() {
-  const txt = document.getElementById('fb-config-text').value.trim();
+  let txt = document.getElementById('fb-config-text').value.trim();
   if (!txt) {
     toast('Please enter the configuration', 'err');
     return;
   }
 
+  // Extract the first { ... } object from whatever the user pasted
+  const startB = txt.indexOf('{');
+  const endB = txt.lastIndexOf('}');
+  if (startB === -1 || endB === -1 || endB < startB) {
+    toast('❌ Could not find a { ... } object in the pasted text.', 'err');
+    return;
+  }
+  const objStr = txt.substring(startB, endB + 1);
+
+  // Try JSON.parse first (strict JSON with quoted keys)
   let parsed = null;
   try {
-    parsed = JSON.parse(txt);
+    parsed = JSON.parse(objStr);
   } catch(e) {
+    // Fallback: evaluate as a JavaScript object literal
     try {
-      const match = txt.match(/\{[\s\S]*\}/);
-      if (match) {
-        parsed = new Function("return " + match[0])();
-      }
-    } catch(err) {
-      console.error(err);
+      parsed = new Function('"use strict"; return (' + objStr + ')')();
+    } catch(e2) {
+      console.error('Config parse failed:', e2);
     }
   }
 
-  if (!parsed || !parsed.apiKey || !parsed.databaseURL) {
-    toast('❌ Invalid format. Make sure apiKey and databaseURL are present.', 'err');
+  if (!parsed || typeof parsed !== 'object' || !parsed.apiKey) {
+    toast('❌ Invalid config: missing apiKey. Paste the full object from Firebase Console > Project Settings > Your apps.', 'err');
+    return;
+  }
+
+  if (!parsed.databaseURL && !parsed.projectId) {
+    toast('❌ Invalid config: missing databaseURL or projectId.', 'err');
     return;
   }
 
   localStorage.setItem('firebase_config', JSON.stringify(parsed));
   closeM('m-fbsetup');
-  toast('Firebase configuration saved!', 'ok');
-  
+  toast('✅ Firebase config saved!', 'ok');
+
   if (initFirebase()) {
     loadFirebaseDB();
   } else {
-    toast('Failed to connect to Firebase', 'err');
+    toast('❌ Failed to connect. Open browser console (F12) for details.', 'err');
   }
 }
 
