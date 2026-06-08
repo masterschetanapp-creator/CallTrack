@@ -670,6 +670,11 @@ function loadFirebaseDB() {
   firebaseListener = dbRef.on('value', (snapshot) => {
     const d = snapshot.val();
     if (d && Array.isArray(d.customers) && Array.isArray(d.calls)) {
+      // Don't overwrite local data with empty Firebase data
+      if (d.customers.length === 0 && customers.length > 0) {
+        saveFirebaseDBDirect();
+        return;
+      }
       customers = d.customers;
       callLogs = d.calls;
       localStorage.setItem('calltrack_data', JSON.stringify({ customers, calls: callLogs }));
@@ -685,11 +690,13 @@ function loadFirebaseDB() {
             customers = localData.customers;
             callLogs = localData.calls || [];
             saveFirebaseDBDirect();
+            renderAll();
             return;
           }
         } catch(e) {}
       }
       seedCustomers();
+      renderAll();
     }
   }, (error) => {
     console.error("Firebase read failed:", error);
@@ -719,11 +726,12 @@ function saveFirebaseDBDirect() {
 
 // ===================== INIT =====================
 async function init() {
+  // Load local data first for instant display, then sync Firebase in background
+  loadBrowserDB();
+
   const isDbConfigured = initFirebase();
   if (isDbConfigured) {
     loadFirebaseDB();
-  } else {
-    loadBrowserDB();
   }
 
   // Wire up filter dropdown
@@ -817,7 +825,9 @@ function saveFirebaseConfigUI() {
 
   if (initFirebase()) {
     loadFirebaseDB();
+    updateDBStatus();
   } else {
+    updateDBStatus();
     toast('❌ Failed to connect. Open browser console (F12) for details.', 'err');
   }
 }
