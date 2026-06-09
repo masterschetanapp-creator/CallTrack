@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2563eb">
+<meta name="application-name" content="CallTrack CRM">
+<link rel="manifest" href="manifest.webmanifest">
+<!-- Firebase App and Realtime Database SDKs (v8) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="firebase-config.js"></script>
+<title>CallTrack CRM</title>
+<style>
+:root {
+  --bg:       #f0f4f8;
+  --card:     #ffffff;
+  --card2:    #f7f9fc;
+  --border:   #e2e8f0;
+  --shadow:   0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg:0 8px 30px rgba(0,0,0,0.10);
+
+  --accent:   #2563eb;
+  --accent-h: #1d4ed8;
+  --accent-lt:#eff6ff;
+
+  --green:    #16a34a;
+  --green-lt: #f0fdf4;
+  --red:      #dc2626;
+  --red-lt:   #fef2f2;
+  --orange:   #ea580c;
+  --orange-lt:#fff7ed;
+  --blue:     #2563eb;
+  --blue-lt:  #eff6ff;
+  --purple:   #7c3aed;
+  --purple-lt:#f5f3ff;
+
+  --text:     #1e293b;
+  --text2:    #475569;
+  --muted:    #94a3b8;
+  --r:        10px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:Segoe UI, Arial, sans-serif; font-size:14px; min-height:100vh; }
+
+/* TOPBAR */
+.topbar {
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+  padding: 0 24px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 2px 16px rgba(37,99,235,0.3);
+}
+.logo { font-weight:700; font-size:18px; color:#fff; letter-spacing:-0.3px; display:flex; align-items:center; gap:8px; }
+.logo span { opacity:0.85; font-weight:400; }
+.hstats { display:flex; gap:24px; }
+.hs { text-align:center; }
+.hs-v { font-weight:700; font-size:18px; color:#fff; }
+.hs-l { font-size:10px; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:.6px; }
+
+/* NAV */
+.nav {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  padding: 0 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.navbtn {
+  padding: 14px 20px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  border: none; border-bottom: 3px solid transparent;
+  background: none; font-family: inherit;
+  transition: all .18s;
+}
+.navbtn:hover { color: var(--accent); background: var(--accent-lt); }
+.navbtn.on { color: var(--accent); border-bottom-color: var(--accent); font-weight:600; }
+
+/* PAGES */
+.page { display:none; padding:24px; max-width:1400px; margin:0 auto; }
+.page.on { display:block; }
+
+/* STAT CARDS */
+.sg { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+.sc {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.sc::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; border-radius:14px 14px 0 0; }
+.sc.blue::before  { background: linear-gradient(90deg,#2563eb,#3b82f6); }
+.sc.green::before { background: linear-gradient(90deg,#16a34a,#22c55e); }
+.sc.red::before   { background: linear-gradient(90deg,#dc2626,#ef4444); }
+.sc.orange::before{ background: linear-gradient(90deg,#ea580c,#f97316); }
+.sc-icon { font-size:28px; margin-bottom:8px; }
+.sc-n { font-size:30px; font-weight:700; color:var(--text); margin:4px 0 2px; }
+.sc-l { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; font-weight:500; }
+.bar { height:5px; background:var(--border); border-radius:3px; margin-top:10px; overflow:hidden; }
+.bar-f { height:100%; border-radius:3px; background:linear-gradient(90deg,#16a34a,#22c55e); transition:width .5s; }
+
+/* SECTION TITLE */
+.st { font-size:15px; font-weight:700; color:var(--text); margin-bottom:12px; margin-top:4px; display:flex; align-items:center; gap:8px; }
+
+/* ALERT BOXES */
+.al {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--red);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex; align-items: flex-start; gap:12px;
+  box-shadow: var(--shadow);
+}
+.al.warn { border-left-color: var(--orange); }
+.al.ok   { border-left-color: var(--green); background: var(--green-lt); border-color:#bbf7d0; }
+.al-t { flex:1; font-size:13px; line-height:1.5; }
+.al-t strong { display:block; font-weight:600; color:var(--text); margin-bottom:2px; }
+.al-t span { color:var(--text2); font-size:12px; }
+
+/* CONTROLS */
+.ctrl { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+.sinp { position:relative; flex:1; min-width:240px; }
+.sinp input {
+  width:100%;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 14px 10px 38px;
+  color: var(--text);
+  font-size: 13px; font-family:inherit;
+  outline:none; transition:.18s;
+  box-shadow: var(--shadow);
+}
+.sinp input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+.sinp input::placeholder { color:var(--muted); }
+.si { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; font-size:15px; }
+
+select {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 13px; font-family:inherit;
+  outline:none; cursor:pointer;
+  box-shadow: var(--shadow);
+  transition:.18s;
+}
+select:focus { border-color:var(--accent); }
+
+/* BUTTONS */
+.btn {
+  padding: 9px 18px;
+  border-radius: var(--r);
+  border: none; cursor:pointer;
+  font-size: 13px; font-weight: 500;
+  font-family: inherit; transition:.18s;
+  display: inline-flex; align-items:center; gap:5px;
+}
+.btn-p {
+  background: linear-gradient(135deg,#2563eb,#3b82f6);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+.btn-p:hover { background:linear-gradient(135deg,#1d4ed8,#2563eb); box-shadow:0 4px 14px rgba(37,99,235,0.4); transform:translateY(-1px); }
+.btn-g {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  color: var(--text2);
+  box-shadow: var(--shadow);
+}
+.btn-g:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-lt); }
+.btn-s { padding:6px 12px; font-size:12px; border-radius:7px; }
+.btn-danger { background:linear-gradient(135deg,#dc2626,#ef4444); color:#fff; box-shadow:0 2px 8px rgba(220,38,38,0.25); }
+.btn-danger:hover { transform:translateY(-1px); }
+
+/* TABLE */
+.tw {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.th {
+  display: flex; justify-content:space-between; align-items:center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card2);
+}
+.th-t { font-weight:700; font-size:14px; color:var(--text); }
+.th-c { font-size:12px; color:var(--muted); background:var(--accent-lt); color:var(--accent); padding:3px 10px; border-radius:20px; font-weight:500; }
+
+table { width:100%; border-collapse:collapse; }
+th {
+  text-align:left; padding:10px 14px;
+  font-size:11px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.6px;
+  color:var(--muted); border-bottom:1px solid var(--border);
+  background: var(--card2); cursor:pointer; user-select:none; white-space:nowrap;
+}
+th:hover { color:var(--accent); }
+td { padding:11px 14px; border-bottom:1px solid var(--border); vertical-align:middle; color:var(--text); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:#f8faff; }
+
+/* BADGES */
+.badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+.b-g    { background:var(--green-lt);  color:var(--green); border:1px solid #bbf7d0; }
+.b-r    { background:var(--red-lt);    color:var(--red);   border:1px solid #fecaca; }
+.b-o    { background:var(--orange-lt); color:var(--orange);border:1px solid #fed7aa; }
+.b-gray { background:#f1f5f9;          color:var(--muted); border:1px solid var(--border); }
+.dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+.mono { font-family:Consolas, 'Courier New', monospace; font-size:12px; color:var(--text2); }
+.tel { color:var(--accent); text-decoration:none; font-family:Consolas, 'Courier New', monospace; font-size:12px; font-weight:500; }
+.tel:hover { color:var(--accent-h); text-decoration:underline; }
+
+/* PAGINATION */
+.pg { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid var(--border); background:var(--card2); }
+.pg-info { font-size:12px; color:var(--muted); }
+.pg-btns { display:flex; gap:4px; }
+.pb {
+  padding:5px 11px; border-radius:7px;
+  border:1.5px solid var(--border);
+  background:var(--card); color:var(--text2);
+  font-size:12px; cursor:pointer; font-family:inherit;
+  transition:.15s;
+}
+.pb:hover { border-color:var(--accent); color:var(--accent); }
+.pb.on { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+.pb:disabled { opacity:.35; cursor:not-allowed; }
+
+/* MODAL */
+.ov {
+  display:none; position:fixed; inset:0;
+  background:rgba(15,23,42,0.5);
+  z-index:200; align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.ov.open { display:flex; }
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width:92%; max-width:500px;
+  max-height:90vh; overflow-y:auto;
+  padding:28px;
+  box-shadow: var(--shadow-lg);
+  animation: su .22s ease;
+}
+@keyframes su { from{transform:translateY(18px);opacity:0} to{transform:none;opacity:1} }
+.modal-t { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.modal-s { font-size:13px; color:var(--muted); margin-bottom:20px; }
+
+.fg { margin-bottom:14px; }
+.fg label { display:block; font-size:11px; color:var(--text2); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+.fg input, .fg select, .fg textarea {
+  width:100%; background:var(--card2);
+  border:1.5px solid var(--border); border-radius:8px;
+  padding:10px 13px; color:var(--text);
+  font-size:13px; font-family:inherit; outline:none; transition:.18s;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.08); }
+.fg textarea { resize:vertical; min-height:76px; }
+.mf { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
+
+/* HISTORY ENTRIES */
+.he { border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; background:var(--card2); }
+.heh { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.hed { font-family:Consolas, 'Courier New', monospace; font-size:12px; color:var(--accent); font-weight:500; }
+.hen { font-size:13px; color:var(--text2); }
+.hdel { background:none; border:none; color:var(--red); cursor:pointer; font-size:15px; padding:2px 4px; border-radius:4px; transition:.15s; }
+.hdel:hover { background:var(--red-lt); }
+
+/* UPLOAD ZONE */
+.uz {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 36px; text-align:center;
+  cursor:pointer; transition:.2s;
+  margin-bottom:16px; background:var(--card);
+}
+.uz:hover, .uz.drag { border-color:var(--accent); background:var(--accent-lt); }
+.uz-i { font-size:38px; margin-bottom:10px; }
+.uz-t { font-weight:600; color:var(--text); margin-bottom:4px; }
+.uz-s { font-size:12px; color:var(--muted); }
+
+/* DB INFO BOX */
+.db-info {
+  background: linear-gradient(135deg,var(--accent-lt),#e0f2fe);
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom:18px;
+  font-size:13px; color:var(--text2);
+}
+.db-info strong { color:var(--accent); }
+
+/* MONTHLY GRID CARD */
+.month-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 10px; text-align:center;
+  box-shadow: var(--shadow);
+  transition:.2s;
+}
+.month-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-2px); }
+.month-card.current { border-color:var(--accent); background:var(--accent-lt); }
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:22px; right:22px; z-index:999;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:13px 18px;
+  font-size:13px; display:flex; align-items:center; gap:10px;
+  animation:su .25s ease;
+  box-shadow:var(--shadow-lg); max-width:320px; color:var(--text);
+}
+.toast.ok  { border-left:4px solid var(--green); }
+.toast.err { border-left:4px solid var(--red); }
+.toast.inf { border-left:4px solid var(--accent); }
+
+/* EMPTY STATE */
+.empty { text-align:center; padding:48px 20px; color:var(--muted); }
+.empty-i { font-size:44px; margin-bottom:12px; }
+.empty p { font-size:14px; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--muted); }
+
+@media(max-width:768px) {
+  .sg { grid-template-columns:repeat(2,1fr); }
+  .hstats { display:none; }
+  .page { padding:14px; }
+  th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4) { display:none; }
+  .nav { overflow-x:auto; -webkit-overflow-scrolling:touch; gap:0; }
+  .navbtn { padding:12px 12px; font-size:12px; white-space:nowrap; flex-shrink:0; }
+  .topbar .logo { font-size:15px; }
+  .ctrl { flex-direction:column; }
+  .sinp { min-width:100%; }
+  select { width:100%; }
+  .btn { width:100%; justify-content:center; }
+  .tw { overflow-x:auto; }
+  table { font-size:12px; }
+  #daily-summary { grid-template-columns:repeat(2,1fr) !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">📞 CallTrack CRM</div>
+  <div class="hstats">
+    <div class="hs"><div class="hs-v" id="h1">0</div><div class="hs-l">Total</div></div>
+    <div class="hs"><div class="hs-v" id="h2">0</div><div class="hs-l">This Month</div></div>
+    <div class="hs"><div class="hs-v" id="h3">0</div><div class="hs-l">Overdue</div></div>
+    <div class="hs"><div class="hs-v" id="h4">0%</div><div class="hs-l">Progress</div></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="navbtn on" onclick="showTab('dash')">📊 Dashboard</button>
+  <button class="navbtn" onclick="showTab('clients')">👥 Clients</button>
+  <button class="navbtn" onclick="showTab('alerts')">🔔 Alerts</button>
+  <button class="navbtn" onclick="showTab('calllog')">📅 Daily Call Log</button>
+  <button class="navbtn" onclick="showTab('db')">💾 Save / Load DB</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page on" id="tab-dash">
+  <div class="sg">
+    <div class="sc blue"><div class="sc-icon">👥</div><div class="sc-l">Total Clients</div><div class="sc-n" id="d-total">0</div></div>
+    <div class="sc green"><div class="sc-icon">✅</div><div class="sc-l">Called This Month</div><div class="sc-n" id="d-called">0</div><div class="bar"><div class="bar-f" id="d-bar" style="width:0%"></div></div></div>
+    <div class="sc red"><div class="sc-icon">🚨</div><div class="sc-l">Overdue / Never</div><div class="sc-n" id="d-over">0</div></div>
+    <div class="sc orange"><div class="sc-icon">⏰</div><div class="sc-l">Due This Month</div><div class="sc-n" id="d-due">0</div></div>
+  </div>
+  <div id="dash-alerts"></div>
+  <div id="dash-monthly"></div>
+</div>
+
+<!-- CLIENTS -->
+<div class="page" id="tab-clients">
+  <div class="ctrl">
+    <div class="sinp">
+      <span class="si">🔍</span>
+      <input type="text" id="srch" placeholder="Type name, mobile or email to search..." autocomplete="off" spellcheck="false" oninput="doSearch(this.value)">
+    </div>
+    <select id="flt">
+      <option value="">All Clients</option>
+      <option value="called">✅ Called This Month</option>
+      <option value="due">⏰ Due This Month</option>
+      <option value="overdue">🚨 Overdue</option>
+      <option value="never">❌ Never Called</option>
+      <option value="notinterested">🚫 Not Interested</option>
+    </select>
+    <button class="btn btn-p" onclick="openAddClient()">➕ Add Client</button>
+    <button class="btn btn-g" onclick="exportCSV()">📤 Export CSV</button>
+  </div>
+  <div class="tw">
+    <div class="th">
+      <span class="th-t">Customers</span>
+      <span class="th-c" id="tbl-count"></span>
+    </div>
+    <div id="tbl-body"></div>
+    <div class="pg" id="tbl-pg"></div>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div class="page" id="tab-alerts">
+  <div id="alerts-content"></div>
+</div>
+
+<!-- DAILY CALL LOG -->
+<div class="page" id="tab-calllog">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+    <div>
+      <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Select Date</label>
+      <input type="date" id="log-date-filter" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;" oninput="drawDailyLog()">
+    </div>
+    <div style="margin-top:18px;display:flex;gap:8px">
+      <button class="btn btn-g" onclick="setLogDate('today')">Today</button>
+      <button class="btn btn-g" onclick="setLogDate('yesterday')">Yesterday</button>
+      <button class="btn btn-g" onclick="setLogDate('week')">This Week</button>
+      <button class="btn btn-g" onclick="setLogDate('month')">This Month</button>
+    </div>
+    <div style="margin-top:18px">
+      <button class="btn btn-g" onclick="exportDailyCSV()">📤 Export CSV</button>
+    </div>
+  </div>
+  <div id="daily-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px"></div>
+  <div id="daily-log-content"></div>
+</div>
+
+<!-- DB SAVE/LOAD -->
+<div class="page" id="tab-db">
+  <div class="st">💾 Save Your Database</div>
+  <div class="db-info" id="db-status">Loading...</div>
+  <button class="btn btn-p" onclick="saveDB()" style="margin-bottom:24px">⬇️ Download DB File (calltrack_db.json)</button>
+
+  <div class="st">☁️ Firebase Cloud Database Sync</div>
+  <div class="db-info" id="fb-status" style="background: linear-gradient(135deg, #fef2f2, #fff5f5); border-color: #fecaca; margin-bottom: 12px;">
+    Checking connection...
+  </div>
+  <button class="btn btn-p" onclick="openFirebaseSetup()" style="margin-bottom:24px">☁️ Configure Firebase</button>
+
+  <div class="st">📂 Load Database</div>
+  <div class="uz" id="dropzone" onclick="document.getElementById('dbfile').click()"
+    ondragover="event.preventDefault();this.classList.add('drag')"
+    ondragleave="this.classList.remove('drag')"
+    ondrop="dropDB(event)">
+    <div class="uz-i">📂</div>
+    <div class="uz-t">Click to load a saved DB file</div>
+    <div class="uz-s">Select the calltrack_db.json file you saved earlier</div>
+  </div>
+  <input type="file" id="dbfile" style="display:none" accept=".json" onchange="loadDBFile(event)">
+
+  <div class="st" style="margin-top:24px">📥 Import New Customers (Excel/CSV)</div>
+  <div class="uz" id="dropzone2" onclick="document.getElementById('custfile').click()"
+    ondragover="event.preventDefault();this.classList.add('drag')"
+    ondragleave="this.classList.remove('drag')"
+    ondrop="dropCust(event)">
+    <div class="uz-i">📋</div>
+    <div class="uz-t">Upload customer Excel or CSV</div>
+    <div class="uz-s">Columns: Name, Email, Mobile — call history preserved</div>
+  </div>
+  <input type="file" id="custfile" style="display:none" accept=".csv,.xlsx,.xls" onchange="loadCustFile(event)">
+
+  <div style="margin-top:24px">
+    <button class="btn btn-danger" onclick="clearCalls()">🗑️ Clear All Call Logs</button>
+  </div>
+</div>
+
+<!-- ADD CLIENT MODAL -->
+<div class="ov" id="m-addclient">
+  <div class="modal">
+    <div class="modal-t">➕ Add New Client</div>
+    <div class="modal-s">Fill in the details below to add a new client</div>
+    <div class="fg"><label>Full Name *</label><input type="text" id="ac-name" placeholder="e.g. RAJESH KUMAR SHARMA"></div>
+    <div class="fg"><label>Mobile Number *</label><input type="tel" id="ac-mobile" placeholder="e.g. 9820012345"></div>
+    <div class="fg"><label>Email Address</label><input type="email" id="ac-email" placeholder="e.g. rajesh@gmail.com"></div>
+    <div class="mf">
+      <button class="btn btn-g" onclick="closeM('m-addclient')">Cancel</button>
+      <button class="btn btn-p" onclick="saveNewClient()">✅ Add Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CLIENT MODAL -->
+<div class="ov" id="m-editclient">
+  <div class="modal">
+    <div class="modal-t">✏️ Edit Client</div>
+    <div class="modal-s" id="ec-sub">Update client details below</div>
+    <div class="fg"><label>Full Name *</label><input type="text" id="ec-name" placeholder="e.g. RAJESH KUMAR SHARMA"></div>
+    <div class="fg"><label>Mobile Number *</label><input type="tel" id="ec-mobile" placeholder="e.g. 9820012345"></div>
+    <div class="fg"><label>Email Address</label><input type="email" id="ec-email" placeholder="e.g. rajesh@gmail.com"></div>
+    <div class="mf">
+      <button class="btn btn-g" onclick="closeM('m-editclient')">Cancel</button>
+      <button class="btn btn-p" onclick="saveEditClient()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG MODAL -->
+<div class="ov" id="m-log">
+  <div class="modal">
+    <div class="modal-t">📞 Log a Call</div>
+    <div class="modal-s" id="m-cname">—</div>
+    <div class="fg"><label>Call Date</label><input type="date" id="l-date"></div>
+    <div class="fg"><label>Outcome</label>
+      <select id="l-out">
+        <option value="Completed">✅ Completed — Spoke to client</option>
+        <option value="No Answer">📵 No Answer</option>
+        <option value="Callback Requested">🔄 Callback Requested</option>
+        <option value="Voicemail Left">📬 Voicemail Left</option>
+        <option value="Not Interested">🚫 Not Interested</option>
+        <option value="Follow Up Needed">⚠️ Follow Up Needed</option>
+      </select>
+    </div>
+    <div class="fg"><label>Follow-up Date (optional)</label><input type="date" id="l-fu"></div>
+    <div class="fg"><label>Notes</label><textarea id="l-notes" placeholder="What was discussed..."></textarea></div>
+    <div class="mf">
+      <button class="btn btn-g" onclick="closeM('m-log')">Cancel</button>
+      <button class="btn btn-p" onclick="saveLog()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="ov" id="m-hist">
+  <div class="modal">
+    <div class="modal-t" id="mh-name">History</div>
+    <div class="modal-s" id="mh-info"></div>
+    <div id="mh-entries"></div>
+    <div class="mf">
+      <button class="btn btn-g" onclick="closeM('m-hist')">Close</button>
+      <button class="btn btn-p" id="mh-log-btn">📞 Log New Call</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE SETUP MODAL -->
+<div class="ov" id="m-fbsetup">
+  <div class="modal" style="max-width: 550px;">
+    <div class="modal-t">☁️ Configure Firebase Database</div>
+    <div class="modal-s">Paste your Firebase Web App configuration object below.</div>
+    <div class="fg">
+      <label>Config JSON / Object Snippet</label>
+      <textarea id="fb-config-text" style="height: 180px; font-family: monospace; font-size: 12px;" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "...",
+  "databaseURL": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:15px;line-height:1.4;">
+      💡 <strong>Where to find this:</strong> Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">Firebase Console</a> &rarr; Project Settings &rarr; Your Apps (Web App) &rarr; Copy the config object.
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" onclick="closeM('m-fbsetup')">Cancel</button>
+      <button class="btn btn-danger" onclick="clearFirebaseConfig()" style="margin-right: auto;">Clear Config</button>
+      <button class="btn btn-p" onclick="saveFirebaseConfigUI()">💾 Save & Connect</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+// ===================== BUILT-IN CUSTOMERS =====================
+const SEED = [{"name":"KAUSHIK DHIRAJLAL GORADIA","email":"mstplywood@gmail.com","mobile":"9820013097"},{"name":"RAJENDRA MANSHUKLAL SHAH","email":"rajendra63@gamil.com","mobile":"9821046131"},{"name":"PRUTHVI NIKHIL BARODIA","email":"pruthvibarodia@gmail.com","mobile":"9773181013"},{"name":"NIKHIL SHIRISH BARODIA","email":"nbarodia@gmail.com","mobile":"9821805671"},{"name":"RICHARD STEPHEN BARBOZA","email":"richards.barboza@gmail.com","mobile":"7715079422"},{"name":"NAYNESH HASMUKHLAL MEHTA","email":"naynesh7@hotmail.com","mobile":"9892164765"},{"name":"VIRAL HEMENDRA SHAH","email":"23.viral@gmail.com","mobile":"9820491334"},{"name":"BHAVIK MAHENDRA KHOTHARI","email":"bhavikk68@gmail.com","mobile":"9892541492"},{"name":"BHAVIK VIRENDRA SHAH","email":"bvshah1976@gmail.com","mobile":"9820854141"},{"name":"ISHWARLAL JIVRAJBHAI PATEL","email":"galanishwar@gmail.com","mobile":"9769345845"},{"name":"SANTOSH RAJENDRAPRASAD GUPTA","email":"santosh.gupta1101@gmail.com","mobile":"9594739697"},{"name":"ANKUR RAJENDRA DESAI","email":"ppdesai81@gmail.com","mobile":"9825800858"},{"name":"VATSAL DIVYESH SHAH","email":"shah_vatsal@hotmail.com","mobile":"9820760102"},{"name":"DARSHAN JAYESH PAREKH","email":"darshanparekh84@yahoo.co.in","mobile":"9820510888"},{"name":"ROHIT BABULAL SONI","email":"soni.rohit2905@gmail.com","mobile":"9820589787"},{"name":"RAHUL VIRESH MEHTA","email":"optionin@gmail.com","mobile":"9920461229"},{"name":"SONALI ANKUSH HATE","email":"sonalihate123@gmail.com","mobile":"9137919018"},{"name":"VARDHAN NIMESH SHAH","email":"veervardhan@gmail.com","mobile":"9833809070"},{"name":"VISHAL SAMEER SHETH","email":"vishalsheth3@gmail.com","mobile":"9820951927"},{"name":"DHAIRYA NIKHIL MERCHANT","email":"dhairya50@gmail.com","mobile":"9870072979"},{"name":"BIREN DEEPAK SHAH","email":"birenshah98@gmail.com","mobile":"9823711612"},{"name":"TEJAS PRAVIN GAUTAMI","email":"tejas.gautami@gmail.com","mobile":"7096189790"},{"name":"AMISH MINESH VASA","email":"amishvasa21@gmail.com","mobile":"9699877199"},{"name":"DHARMESH ARVINDRAI SHAH","email":"dharmeshcomputech@rediffmail.com","mobile":"9820132496"},{"name":"MILAN DHIRAJLAL MEHTA","email":"mehtaassociates9@gmail.com","mobile":"9821444741"},{"name":"PIYUSH MAGANLAL PAREKH","email":"piyushparekh60@gmail.com","mobile":"9833165076"},{"name":"DHAVAL VIJAY KAMDAR","email":"dhavalkamdar7@gmail.com","mobile":"9920113007"},{"name":"PRADHUMAN KANTILAL DOSHI","email":"doshimetal@hotmail.com","mobile":"9819260194"},{"name":"HETAL DHARMESH JHAVERI","email":"jhaverihetal78@gmail.com","mobile":"9820463731"},{"name":"SAURABH BALKRISHNA KEDARE","email":"saurabhkedare18@gmail.com","mobile":"9930459723"},{"name":"SANJAY PRABHUDAS MEHTA","email":"mehtasanjay62@gmail.com","mobile":"9820660791"},{"name":"RUTUJA SNEHASHISH GHOSH","email":"rujuta260871@gmail.com","mobile":"9699872615"},{"name":"VIVEK RAJENDRA SINGH","email":"viveksingh2508@gmail.com","mobile":"9930137313"},{"name":"MAHESH DIPAKBHAI JADEJA (VIVEK SINGH REF)","email":"jadeja049@gmail.com","mobile":"9167737989"},{"name":"DAKSHESH HIRALAL ZAVERI","email":"dakshesh.zaveri@gmail.com","mobile":"9324227016"},{"name":"KARAN BALAKRAM VARMA (VIVEK SINGH REF)","email":"karanv214@gmail.com","mobile":"9833374441"},{"name":"JAYESH CHIMANLAL VASA","email":"ferilsynthetics93@gmail.com","mobile":"9820465554"},{"name":"PARUL DIPAK SANGHVI","email":"apr24658@gmail.com","mobile":"9082201415"},{"name":"MANISH SATPRAKASH JAIN","email":"manish_jain76@rediffmail.com","mobile":"9820694755"},{"name":"MAYUR DASHRATH LIMBACHIA","email":"mayurjyoti123@gmail.com","mobile":"9920236543"},{"name":"PRAKASH NANJI KAWA","email":"kawavijeta@gmail.com","mobile":"7718097162"},{"name":"MANISH UPENDRA SHANGHVI - Chetan Sir","email":"manish.shanghvi@gmail.com","mobile":"9867626262"},{"name":"MUKUL MAHENDRA MEHTA","email":"mukulmehta111@yahoo.in","mobile":"9819106255"},{"name":"ASHISH DINESH SIROYA","email":"ashish.siroya@yahoo.com","mobile":"9869162458"},{"name":"KIRIT RAMJIBHAI GADHIA","email":"kiritg@gmail.com","mobile":"9969568865"},{"name":"PRAVIN RAMJI GADHIYA","email":"pravin.mrg@gmail.com","mobile":"9869006420"},{"name":"DIPAK CHIMANLAL SANGHAVI","email":"dipaksanghavi@yahoo.com","mobile":"9324116223"},{"name":"KARTIK CHANDRAKANT MEHTA","email":"darshprints@gmail.com","mobile":"9324452710"},{"name":"ANKUR PRAKASHBHAI SHAH","email":"ank111ur@gmail.com","mobile":"9892389565"},{"name":"RAJESH CHANDRAKNT BABARIA","email":"rajesh.babaria71@gmail.com","mobile":"9820101239"},{"name":"RAJESH DINESH SANGHAVI","email":"rajeshsanghavi_2004@rediffmail.com","mobile":"9321144818"},{"name":"BHARAT BHUPATRAI DOSHI","email":"bdoshi7@gmail.com","mobile":"9820291891"},{"name":"VIRAL MANUBHAI GOHEL","email":"viralgohel4@gmail.com","mobile":"9821364652"},{"name":"NILESH PANDURANG JADHAV","email":"ca.rahul.g@gmail.com","mobile":"8097337241"},{"name":"SHIMONEE SANJEEV SHAH","email":"simonee.shah@gmail.com","mobile":"9833812244"},{"name":"RAHUL SURESH GUPTA","email":"ca.rahul.g@gmail.com","mobile":"9873412622"},{"name":"PARAG MANGALDAS GANDHI","email":NaN,"mobile":"9422310223"},{"name":"JITENDRA HARISHCHANDRA TITA","email":"jitendrajyotitita@hotmail.com","mobile":"9920250239"},{"name":"JIGAR JAYKUMAR JOSHI","email":"jigarjoshi1970@gmail.com","mobile":"8422825825"},{"name":"SAMIR PRAVIN SHAH","email":"samtej97@yahoo.co.in","mobile":"9820065299"},{"name":"HEETESH PRAVIN SHAH","email":"gayatree07@yahoo.com","mobile":"9820237764"},{"name":"BHAVIN MADHUSUDAN SHAH","email":"dsn_creation@yahoo.co.in","mobile":"9820097532"},{"name":"FALGUNI KIRAN TRIVEDI","email":"kidi2kida@gmail.com","mobile":"9967934090"},{"name":"HEENA TUSHAR MISTRY","email":"heena.mistry@newindia.co.in","mobile":"8369861443"},{"name":"MUKUND MAHENDRA MANIAR","email":"mukundmaniar@gmail.com","mobile":"9223449125"},{"name":"SANJAY KRISHNA KADAM","email":"kadamsanjay340@gmail.com","mobile":"9224023955"},{"name":"SUJIT CHANDRU SABHANI","email":"harshalenterprises@hotmail.com","mobile":"9881377175"},{"name":"CHANDANRAJ BALVANTRAJ KOTHARI - Chetan Sir","email":"drkrutika66@gmail.com","mobile":"9869154537"},{"name":"NAYESH VIJAY PATANI - Chetan Sir","email":"drnayesh@gmail.com","mobile":"9819362867"},{"name":"ASHISH BHAGWAN TAHILIANI","email":"ibt@vsnl.com","mobile":"9820092423"},{"name":"CHHAYA PARESH VORA","email":"bhavyagraphics20@gmail.com","mobile":"9821077698"},{"name":"PRAKRUTI KENIL DOSHI","email":"kenil@jainmachinetools.net","mobile":"9223388596"},{"name":"TUSHAR HARKISHANDAS MEHTA","email":"tushar_mehta62@rediffmail.com","mobile":"9825046596"},{"name":"NIRAV MANUBHAI PARMAR","email":"niravmp@gmail.com","mobile":"9820556164"},{"name":"KAUSHIK RASIKLAL RAJGOR","email":"kaushik_rajgor@yahoo.co.in","mobile":"9867085791"},{"name":"KEYUR AMULAKH MEHTA","email":"keyurmehta62@gmail.com","mobile":"9869074839"},{"name":"KUNTAL SHREYANS SHAH","email":"ketan@kundan3.com","mobile":"9819675300"},{"name":"DHANESH DOSHI","email":"dhanesh@doshienterprices.com","mobile":"9322544481"},{"name":"PURAV MEHTA (KARTIK BHATIA REF)","email":"purav1881@gmail.com","mobile":"9833229966"},{"name":"CHINMAI KETAN SHAH","email":"ketan@kundan3.com","mobile":"9327435954"},{"name":"MAYUR JAGDISH DHRUVA - Chetan Sir","email":"navjyot_engg@yahoo.com","mobile":"9821429388"},{"name":"NILESH AMRITLAL MEHTA","email":"namehta2014@gmail.com","mobile":"9082505217"},{"name":"AVADHUT SHANKAR DHAGE (NIRAV N SHAH REF)","email":"avadhut_d@yahoo.com","mobile":"9867789354"},{"name":"ZAID AFTAB SIDDIQUE","email":"zaid22siddique@yahoo.co.in","mobile":"9869832373"},{"name":"SHEETAL KIRAN SHAH","email":"sheetalconnect@yahoo.com","mobile":"9870094994"},{"name":"NEELESH KRISHNAJI VAITY","email":"neelesh.infitness@gmail.com","mobile":"9819977572"},{"name":"JITENDRA DAHYABHAI DODIA","email":"aditya13dodia@gmail.com","mobile":"9820657080"},{"name":"JIGNESH B SHAH","email":"jigneshbshah1982@gmail.com","mobile":"9920533361"},{"name":"PRAVIN RANMAL GOSARANI","email":"documentchetan@gmail.com","mobile":"9833745275"},{"name":"HEMENDRA CHANDRAKANT VASA","email":"hemendravasa@gmail.com","mobile":"9821158435"},{"name":"DEEPAK BHAGWANDAS SHAH","email":"documentchetan@gmail.com","mobile":"9833799345"},{"name":"PRAKASH RATANLAL RAJAWAT","email":"documentchetan@gmail.com","mobile":"9324273232"},{"name":"SAGAR DATTARAM GANEKAR (VIKAS GUPTA STAFF)","email":NaN,"mobile":"9324273030"},{"name":"DILIP PRATAP MERTIYA (VIKAS GUPTA STAFF)","email":NaN,"mobile":"9324273030"},{"name":"MOMIN ABU SUFYAN (VIKAS GUPTA STAFF)","email":NaN,"mobile":"9324273030"},{"name":"TANAJI RAMCHANDRA GAIKWAD","email":NaN,"mobile":"9324273030"},{"name":"PRAKASH SATYANARAYAN DUSA (VIKAS GUPTA STAFF)","email":NaN,"mobile":"NO"},{"name":"MAHESH BHIVA ORKAR (VIKAS GUPTA STAFF)","email":NaN,"mobile":"NO"},{"name":"MOIN KAZI (VIKAS GUPTA STAFF)","email":NaN,"mobile":"NO"},{"name":"JAVID SHARIF MULLA (VIKAS GUPTA STAFF)","email":NaN,"mobile":"9960042122"},{"name":"JITENDRA BHARAT RATHOD","email":"jitendravjy10@gmail.com","mobile":"9819083700"},{"name":"PANNA NARENDRA JOSHI","email":"pannajoshi123@gmail.com","mobile":"9819715819"},{"name":"PARESH MANSUKHALAL SHAH","email":"shahparesh2003@gmail.com","mobile":"9819861169"},{"name":"VIJAY SHANTILAL SANGHVI","email":"darshansanghvi_18@hotmail.com","mobile":"7666886999"},{"name":"HIREN KHIMJI SHAH","email":"cooidudehiren44@yahoo.in","mobile":"9821463525"},{"name":"UDAYKUMAR U PATIL","email":"jellygolly@hotmail.com","mobile":"9822626267"},{"name":"PRATIBHA JAIKARAN CHILLAR","email":"pratibha.chillar@gmail.com","mobile":"9029288868"},{"name":"BEATE TAHER RUPAWALLA","email":NaN,"mobile":"9920738076"},{"name":"DINESH MAFATLAL SHAH","email":NaN,"mobile":"9892573764"},{"name":"CHIRAG AJAY GORADIA","email":"chiraggoradia1987@gmail.com","mobile":"9167942416"},{"name":"PURVI MANHARLAL SHAH","email":"purviright@gmail.com","mobile":"9821258299"},{"name":"JANMESH BHARAT RAVAL","email":"janmesh99@yahoo.com","mobile":"9819011906"},{"name":"ROSHNA PRAVEEN MENDONCA (BIPIN SHAH STAFF)","email":"NO","mobile":"9769156304"},{"name":"HEMA P PINHEIRO (BIPIN SHAH STAFF)","email":"bipinrshah3854@gmail.com","mobile":"9967109329"},{"name":"DAHESH NAVINCHANDRA SHAH","email":"ca.gautamshah@gmail.com","mobile":"9821149285"},{"name":"YOGESH HARISHCHANDRA PAWAR","email":"NO","mobile":"9819051918"},{"name":"BIPIN MOHANLAL JOSHI","email":"divyajoshi.147@rediffmail.com","mobile":"9619869102"},{"name":"PRADIP VRAJLAL GANDHI","email":"pradipgandhi104@gmail.com","mobile":"9819926499"},{"name":"PRASHANT RAMCHANDRA JAGTAP (BHAVESH SWITA)","email":"sonalik555@gmail.com","mobile":"8484901315"},{"name":"VIKRAM TULSIDAS VAISHNAV","email":"vickyvaishnav99@gmail.com","mobile":"8080094509"},{"name":"DHARMESH BABUBHAI PATEL","email":"dharmeshpatel5000.dp@gmail.com","mobile":"9769788070"},{"name":"MANSI ARPAN SHAH","email":"nimeshgandhi07@gmail.com","mobile":"9892280550"},{"name":"BINAL HIMANSHU SHETH","email":"info@smoothcargo.in","mobile":"9820959599"},{"name":"SUHAIL MEHBOOB VOHRA","email":"vsuhail@live.com","mobile":"9920882162"},{"name":"PADMAJA LALIT","email":"padmajaplalit@gmail.com","mobile":"9821759209"},{"name":"KISHOR NARAYAN POL (REF AKSHAY OFC)","email":"kishorpol141@gmail.com","mobile":"8425992997"},{"name":"LEON ARVIND VORA","email":"leon_vora@rediffmail.com","mobile":"9820809596"},{"name":"DARSHANA ATUL GADA","email":"darsh.gada@yahoo.com","mobile":"9892596332"},{"name":"PIYUSH ANIL MEHTA","email":"arihantchemical@gmail.com","mobile":"9820410476"},{"name":"JAI PRAKASH AGRAWAL","email":"mumbai739@gmail.com","mobile":"9004140004"},{"name":"SHASHIKANT KANTILAL SHETH","email":"NO","mobile":"9819122398"},{"name":"HANSA RAVINDRA SHAH","email":"vipuivvm@gmail.com","mobile":"9769288119"},{"name":"MEENA JOSHI (KALPANA Y JOSHI)","email":"natasharjoshi@gmail.com","mobile":"NO"},{"name":"SHRENIK RAJNIKANT GANDHI (VIJAY N MEHTA STAFF)","email":"shrenikrg@gmail.com","mobile":"9833723382"},{"name":"JAYESH BABULAL MEHTA","email":"parasmehta18@yahoo.in","mobile":"9321024515"},{"name":"SACHIN SUBHASH MAHAJAN","email":"sachinmahajan16.sm@gmail.com","mobile":"9892095302"},{"name":"KUNAL SUBHASH GUPTA","email":"kunalgupta110@gmail.com","mobile":"7666931646"},{"name":"DEVANG MAYUR BHATT","email":"devangpr@gmail.com","mobile":"9819606275"},{"name":"MAYUR MANSUKHLAL MODI","email":"mayurmodim67@gmail.com","mobile":"9833849415"},{"name":"ROHIT LAXMAN DHANAK (DARSHAN K DOSHI STAFF)","email":"NO","mobile":"9221020686"},{"name":"ATUL ANANTRAI PAREKH","email":"saiteacentre@gmail.com","mobile":"9820146365"},{"name":"VARUN SAMIR SHETH","email":"varunsheth9@gmail.com","mobile":"9820951923"},{"name":"HAREN SEVANTILAL KOTHARI","email":"harenkothari@rediffmail.com","mobile":"9969451211"},{"name":"PIYUSH ANIL JOSHI","email":"mjoshi3078@gmail.com","mobile":"8451079687"},{"name":"SANDEEP RAMESH UJGAONKAR","email":"sandeep26ujgaonkar@gmail.com","mobile":"9969265407"},{"name":"COLLIN PAUL NORONHA","email":"noronha.collin@gmail.com","mobile":"9833540827"},{"name":"SANDEEP DILIP BODKE (SAGAR REF)","email":"sandipbodke25@gmail.com","mobile":"9223342981"},{"name":"CHANDRAKANT SHANTILAL CHITALIA","email":"meet3991@gmai.com","mobile":"9820085891"},{"name":"MITIL HARESH DHORAJIYA","email":"mithildhorajiya@gmail.com","mobile":"9819142893"},{"name":"PARTH PRASHANT DOCTOR","email":"parthdoctor@yahoo.com","mobile":"9819474340"},{"name":"SCANITA HYGINUS DSOUZA","email":"dsouzascanita@gmail.com","mobile":"9870877445"},{"name":"SHEETAL JAMES DSOUZA","email":"Sheetaldsouza025@gmail.com","mobile":"9082429226"},{"name":"MAHIPAT BENDU GHULGHULE","email":"mahipatghulghule12166@gmail.com","mobile":"8097651838"},{"name":"PANKTI HRISHIKESH SHANGHVI","email":"hhs671@gmail.com","mobile":"9004382310"},{"name":"MINAXI ASHOK PARIKH","email":"mjoshi3078@gmail.com","mobile":"9867028064"},{"name":"POONAM SANTOSH KANDU","email":"wealthchetan@gmail.com","mobile":"7039566228"},{"name":"SNEHAL SHRIMANT KSHIRSAGAR","email":"snehal.kshirsagar@gmail.com","mobile":"9664353494"},{"name":"SHANKAR SHAMSUNDAR KAMBLI","email":"kambli.s@rediffmail.com","mobile":"9702351093"},{"name":"RONAK KANAIYALAL LIMBACHIYA","email":"minaxilimbachiya70484@gmail.com","mobile":"7303044252"},{"name":"MAHENDRA SHIVLAL MEHTA","email":"msmehta1940@gmail.com","mobile":"9819071791"},{"name":"ASHA DIVYESH MEHTA","email":"mehta_asha2003@yahoo.com","mobile":"9820234180"},{"name":"KRISHNAKANT GULABCHAND MODI","email":"kotharib@gmail.com","mobile":"9322078895"},{"name":"DILIP AJIT MOTA - Chetan Sir","email":"dlpmota@yahoo.com","mobile":"9821184687"},{"name":"HARKANT KANTILAL MEHTA","email":"harkantm@gmail.com","mobile":"9821037469"},{"name":"SONAL NIKHIL MARU","email":"nikhilmaru89@gmail.com","mobile":"8788051898"},{"name":"NEEMESH RATILAL MAHETA","email":"marsimpex18@gmail.com","mobile":"9930453698"},{"name":"PRITI ABHINAV MISHRA","email":"preitymishra04@gmail.com","mobile":"7666237169"},{"name":"JIGNYASHA VINOD MAHIDA","email":"jignyashamahida@gmail.com","mobile":"7021769754"},{"name":"DEVENDRA GUNAJI MORE","email":"devendramore10@yahoo.com","mobile":"9029762714"},{"name":"NAYAN VENILAL MEHTA","email":"nm1906@yahoo.co.in","mobile":"9820360406"},{"name":"VIKAS VIJAY PEDNEKAR (X OFC STAFF)","email":"vikas.pednekar2011@gmail.com","mobile":"9773013615"},{"name":"JANAK NATHALAL PAREKH","email":"chandresh_parekh9@rediffmail.com","mobile":"9820231564"},{"name":"NITIN KANTILAL RAVAL","email":"rawalnirav19@hotmail.com","mobile":"NO"},{"name":"HETAL RAHUL RUPAREL","email":"chug.heta@gmail.com","mobile":"9820625184"},{"name":"NIRAV KANUBHAI RAVAL","email":"RAVALNIRAV1977@GMAIL.COM","mobile":"8108174118"},{"name":"SALONI HEMANSHU RAJA","email":"saloni.raja@gmail.com","mobile":"9920054706"},{"name":"NITIN PRATAP RAGHANI","email":"nitinpr@nprdesign.com","mobile":"9821144321"},{"name":"JITENDRA NANALAL SEJPAL - Chetan Sir","email":"jitendrasejpal@gmail.com","mobile":"9769620204"},{"name":"NILESH RAMNIKLAL SHAH","email":"shahshakshi@yahoo.co.in","mobile":"9819593017"},{"name":"KIRTI kIRAN SALVI","email":"kirtisalvi842@gmail.com","mobile":"9594747513"},{"name":"FALGUNI HITESH SHETH","email":"FALGUNISHETH04@GMAIL.COM","mobile":"9969367883"},{"name":"JYOTINDRA BABUBHAI THAKKAR","email":"jthakkar2012@gmail.com","mobile":"9821122896"},{"name":"DIPTI KETAN THAKAR","email":"dipti170566@gmail.com","mobile":"9833127106"},{"name":"RANJEET KUMAR YADAV","email":"ranjit.balma@gmail.com","mobile":"9004748022"},{"name":"DATTATRAY PANDURANG PAWAR","email":"Pawardattatray504@gmail.com","mobile":"9702363825"},{"name":"TUSHAR VORA","email":"tusarvora@yahoo.in","mobile":"NO"},{"name":"MOHSIN ISMAIL (REF ASAD)","email":"NO","mobile":"NO"},{"name":"APURVA RAJENDRA SHAH","email":"rajendra63@gmail.com","mobile":"9821046131"},{"name":"SHASHANK AMIT SHAH","email":"shah.shashank95@gmail.com","mobile":"8369785046"},{"name":"HARIISH BAJAJ","email":"habajaj72@gmail.com","mobile":"NO"},{"name":"SHIVAJI WAMAN BHASKAR","email":"NO","mobile":"NO"},{"name":"SIDDHARTH COOMAR GUPTA","email":"NO","mobile":"NO"},{"name":"AMISHA KETAN CHAMPANERI","email":"CHAMPANERI.AMISHA@HAMON.COM","mobile":"9930699139"},{"name":"ABHIJIT D PAREKH","email":"abhijit.d.parekh@gmail.com","mobile":"9930171094"},{"name":"SANA NAAZ ALAM","email":"NO","mobile":"9167227488"},{"name":"DHARMESH HASMUKHLAL AJMERA","email":"dajmera@yahoo.com","mobile":"9821155692"},{"name":"AMJAD ALI (VIKAS GUPTA STAFF)","email":"amjadself1988@gmail.com","mobile":"9322430476"},{"name":"NAGMA NAUSHAD ANSARI","email":"anagma724@gmail.com","mobile":"8097677577"},{"name":"SUNIL GOPAL AGRE","email":"SUNILAGRE120@GMAIL.COM","mobile":"9637878078"},{"name":"MOHAMMAD HAMEED ATEEULLA","email":"sales@arihanttubes.net","mobile":"NO"},{"name":"VENKATESH SANKARANARAYANA AIYER","email":"accountsblr@myuniflex.com","mobile":"9845015449"},{"name":"PRASHANT DATTATRAY ARGEKAR","email":"prashant.argekar@gmail.com","mobile":"9967016804"},{"name":"JYOTI AIYA (AMISH VASA WIFE)","email":"jyotiaiya@gmail.com","mobile":"9820672799"},{"name":"BHARAT BHOJA AYAR (REF RONAK LIMBACHIA)","email":"ahirbharatb556@gmail.com","mobile":"7977020027"},{"name":"DINESH BHAI AHIR","email":"dinuuahir1997@gmail.com","mobile":"9930152453"},{"name":"SANTOSH VASANT GAIKWAD","email":"santoshg@insuremagic.com","mobile":"9503809643"},{"name":"JAYESH H BILAKHIA","email":"dimplebilakhia@gmail.com","mobile":"887917915"},{"name":"SHREYA VIJAY BADIYANI","email":"ishan9627@gmail.com","mobile":"9870000669"},{"name":"VIRESH VRAJLAL BOLE","email":"hvbole@gmail.com","mobile":"9820868988"},{"name":"BALMUKUND","email":"balmukundyadav75@gmail.com","mobile":"8104322767"},{"name":"NAMITA LALIT BAGUL","email":"namitabagul@gmail.com","mobile":"9082316516"},{"name":"NALINI DILIP BHATT","email":"NO","mobile":"NO"},{"name":"MARAND BADHABHAI (RONAK LIMBACHIYA)","email":"rajeshahir643@gmail.com","mobile":"8879162387"},{"name":"BHUPENDRA TARACHAND BAVISHI","email":"bavishi.shreyansh@gmail.com","mobile":"9820810878"},{"name":"JAINAM MANISH BAFNA","email":"jainambafna43@gmail.com","mobile":"9833012668"},{"name":"HARDIK BAFNA","email":"hardikbafna2003@gmail.com","mobile":"9363107474"},{"name":"SIDDHARTH BAID","email":"baidsiddharth@gmail.com","mobile":"9819650180"},{"name":"SACHIN BHUTA","email":"excelintn@gmail.com","mobile":"9769094794"},{"name":"RASESH SHIRISH BHUTA","email":"acmerubchem@gmail.com","mobile":"9322242512"},{"name":"DIPTI DOLATRAI BHUTTA","email":"jaybombay@gmail.com","mobile":"9833517901"},{"name":"VASUDEV MANILAL BHATIA","email":"vimalbhatiya25@gmail.com","mobile":"8828027848"},{"name":"SUPAN ANIL BALLU (REF SHUBHAM ALPESH SHAH)","email":"supan.shah1290@gmail.com","mobile":"8356920556"},{"name":"PRADIP NAUTAMLAL BAVISHI","email":"pradipbavishi27@gmail.com","mobile":"8779929126"},{"name":"SUHAS MAHADEV CHAVAN","email":"vedant.chavan@ptve.edu.in","mobile":"8452820978"},{"name":"GANESH MURARI CHAVAN (SAGAR SHAH)","email":"ganesh.mchavan4@gmail.com","mobile":"7506071594"},{"name":"PURVI T CHOKSHI","email":"purvi06chokshi@yahoo.com","mobile":"9819196561"},{"name":"SARITA GULAB CHAVAN","email":"saritachvan123@gmail.com","mobile":"9152711628"},{"name":"KETAN DIGAMBER CHACHAD (STAFF OF VAIBHAV GANDHI)","email":"NO","mobile":"9820679798"},{"name":"SANJAY S CHITRODA","email":"sanjaychitroda10@gmail.com","mobile":"NO"},{"name":"DALJEETSINGH B CHANDHOK","email":"djchandhok38@gmail.com","mobile":"9819946446"},{"name":"RAJESH CHIDAMBARAN","email":"RAJESHVC@GMAIL.COM","mobile":"9496459863"},{"name":"ALKESH INDRAVADAN CHOKSHI (REF SOURABH DESAI)","email":"chokshialkesh1961@gmail.com","mobile":"NO"},{"name":"DAKSH BHUPENDRA CHHAJED (REF SUBHAM)","email":"dakshchha@gmail.com","mobile":"8451016242"},{"name":"RAKESH RAMPRAKASH DUGGAL","email":"DATTATREYANH2@GMAIL.CO","mobile":"9821517451"},{"name":"UTSAV DHIRAJLAL DOSHI","email":"utsavd69@gmail.com","mobile":"9223467079"},{"name":"SAGARKUMAR PRAVIN DEVKAR","email":"sagardevkar1984@gmail.com","mobile":"9870090610"},{"name":"KATHERINE OSWALD DSOUZA","email":"roystondesouza2010@gmail.","mobile":"8082388993"},{"name":"KIRAN DIWALE (VIKAS GUPTA STAFF)","email":"diwalekiran100@gmail.com","mobile":"NO"},{"name":"AJAY BHARATKUMAR DAVE","email":"ajaybdave@gmail.com","mobile":"7045837517"},{"name":"KEYUR K DOSHI (REF KHANTI)","email":"NO","mobile":"NO"},{"name":"PANNA VINOD DOSHI","email":"NO","mobile":"NO"},{"name":"DIJESH P DOSHI","email":"NO","mobile":"9821121234"},{"name":"RYAN WILFRED D CRUZ","email":"dcruzray1819@gmail.com","mobile":"7045151733"},{"name":"KAMLESH NANUBHAI DABHI","email":"dabhidarshil.07@gmail.com","mobile":"NO"},{"name":"MANISH DHANVANTRAI DAVE","email":"farecomputers@gmail.com","mobile":"9769962286"},{"name":"SMRITI DWIVEDI","email":"SMRITIDWIVEDI161@GMAI","mobile":"9022138573"},{"name":"PRASAD TUKARAM DHIKALE","email":"drdpkem@gmail.com","mobile":"7418434404"},{"name":"DIPTI SAURABH DESAI","email":"saudip1987@gmail.com","mobile":"9322219224"},{"name":"JIGNESH PRAVINCHANDRA DOSHI(DIJESH DOSHI BROTHER)","email":"jigneshpdoshi97@gmail.com","mobile":"8767720407"},{"name":"VEERANGI CHAMPAKIAL SHETH","email":"darshaniexports@hotmail.com","mobile":"9820353571"},{"name":"SUSHIL CHHANALAL DOSHI (REF NEEMESH MEHTA / PRANAV PRAKASH)","email":"sushildoshi84@gmail.com","mobile":"9892171830"},{"name":"KEVAL NARENDRA DOSHI","email":"sujaydoshi@gmail.com","mobile":"9819766671"},{"name":"ABHAY AMRATLAL DOSHI (REF TEJAS HASMUKH SHAH)","email":"NO","mobile":"9820072833"},{"name":"EKTA ASHAY MEHTA","email":"ektashah80@gmail.com","mobile":"9820392793"},{"name":"LAZARUS ANTHONY FERNANDES (REF VIRAL VED)","email":"lazarusferns@gmail.com","mobile":"9769568201"},{"name":"PRAKASH NANALAL MEHTA","email":"mehta.dharmik@yahoo.com","mobile":"9320679509"},{"name":"JITENDRA J GANDHI - Chetan Sir","email":"vaibhav.gandhi@rjayantilal.c","mobile":"9820123420"},{"name":"TEJPRAKASH MURLIDHAR SONI","email":"tpsoni703@yahoo.in","mobile":"9322166800"},{"name":"PRASHANT B BHATT","email":"pbhatt12@yahoo.co.in","mobile":"9820083551"},{"name":"VISHAL ARVIND DOSHI","email":"vishaldoshi73@gmail.com","mobile":"9892776438"},{"name":"MEHUL PRAVIN SHAH - Chetan Sir","email":"viraj9193@gmail.com","mobile":"8767305040"},{"name":"RAJAN DAHYABHAI GAJJAR","email":"rajangajjar45@gmail.com","mobile":"9820318315"},{"name":"HARSHAD AMRITLAL LAKHANI","email":"nikesh.lakhani@gmail.com","mobile":"9821156643"},{"name":"HITESH HIMATLAL MEHTA","email":"devansh.mehta0004@gmail.c","mobile":"9324918980"},{"name":"SHASHIKANT MOHANLAL MEHTA","email":"bhaveshmehta54@gmail.com","mobile":"9867489480"},{"name":"HUSSAIN EBRAHIM RUPAWALLA - Chetan Sir","email":"teckmans2010@gmail.com","mobile":"8879131301"},{"name":"NIMESH PRAFUL MEHTA","email":"nimeshpmehta@gmail.com","mobile":"9323135166"},{"name":"NEEL SURESH MEHTA","email":"chin10_mehta@yahoo.com","mobile":"9323421253"},{"name":"CHETAN CHAMPAKLAL SHETH - Chetan Sir","email":"darshaniexports@hotmail.com","mobile":"9820353571"},{"name":"HANSRAJ WAGHJI SHAH","email":"viralshah31.vs@gmail.com","mobile":"9819899006"},{"name":"VERSHI SIVJI NISHAR","email":"manish.v.nishar@gmail.com","mobile":"9172433323"},{"name":"JATIN KANTILAL SHAH","email":"jatinshah2000@yahoo.com","mobile":"9821011082"},{"name":"VIJAY NAGINDAS MEHTA - Chetan Sir","email":"rajvi@mtnl.net.in","mobile":"9820038741"},{"name":"KANTILAL RAMJI JOSHI","email":"bhavin8910@gmail.com","mobile":"9821303539"},{"name":"YATIN RAMJI JOSHI","email":"riddhish jrsentp@gmail.com","mobile":"9820700432"},{"name":"RAKESH BABULAL DESAI","email":"rakeshdesai54@gmail.com","mobile":"9820100732"},{"name":"HARIDAS NARANDAS ASHAR","email":"ashardevang@icloud.com","mobile":"9820207171"},{"name":"KETAN PRANLAL MEGHANI","email":"jashikamanasvi_meghani@","mobile":"9820086794"},{"name":"MANISH JAYANTILAL GANDHI","email":"mjgandhi15@rediffmail.com","mobile":"9869668045"},{"name":"JAYESH PRATAPRAI SANGHAVI","email":"dishacorpn@hotmail.com","mobile":"9821536815"},{"name":"PANKAJ AJIT JHAVERI","email":"pjhaveri_65@yahoo.co.in","mobile":"9870403211"},{"name":"JITENDRA PANACHAND SHAH","email":"riddhi.smca@gmail.com","mobile":"9004847770"},{"name":"NIKHIL PRAVINCHANDRA JOSHI","email":"nikhil.joshi@rediffmail.com","mobile":"9820328367"},{"name":"HARESH P AJMERA","email":"chintanajmera@gmail.com","mobile":"9890269898"},{"name":"SATYAWAN K KELUSKAR","email":"shubhamproperties106@gmail.com","mobile":"9820186496"},{"name":"HEMAN AMRUTLAL LAKHANI","email":"hemanlakhani@hotmail.com","mobile":"9324273232"},{"name":"SAMIR HARSHAD DOSHI -  Chetan Sir ","email":"samsmile_2000@yahoo.com","mobile":"9821071166"},{"name":"MAHENDRA KANTILAL SHAH","email":"formehul@gmail.com","mobile":"9820437116"},{"name":"SAUMIL KUMAR SHAH","email":"saumilkshah@hotmail.com","mobile":"9820513015"},{"name":"JAYSUKHLAL T DOSHI","email":NaN,"mobile":NaN},{"name":"VIKRAM MANILAL DOSHI","email":NaN,"mobile":"8108541140"},{"name":"RAJNIKANT MANILAL DOSHI","email":NaN,"mobile":NaN},{"name":"SUDHIR MANILAL DOSHI","email":NaN,"mobile":"9821134927"},{"name":"HARSHAD HARGOVINDDAS SHAH","email":"masterbhavesh1234@hotma","mobile":"9821294464"},{"name":"CHANDRAKANT J MEHTA","email":"cjmehtaandco@gmail.com","mobile":"9323126155"},{"name":"JAYESH KANTILAL SHAH","email":"sjayesh481@gmail.com","mobile":"9820461051"},{"name":"NILESH HARSHAD SHAH","email":"nileshshah1967@gmail.com","mobile":"9022306780"},{"name":"RAJESH YASHWANTRAI SHAH","email":"darshil1992@hotmail.com","mobile":"9819157755"},{"name":"RAJENDRA PRABHUDAS MEHTA","email":"rajendra10125@gmail.com","mobile":"9819957280"},{"name":"DEVIDAS BHIMAJI PANSARE","email":"pansare.devidas@gmail.com","mobile":"8879289809"},{"name":"NARENDRA KHIMCHAND SHAH","email":"s.kruti.s@gmail.com","mobile":"9594726250"},{"name":"NIKHIL SHIRISH JOSHI","email":"nikhilsjoshi18@gmail.com","mobile":"9757362438"},{"name":"KUNAL JAGDISH JAISWAL","email":"rohanjaiswal1980@gmail.com","mobile":"9323548034"},{"name":"MALHAR R PARALKAR","email":"malhar6895@gmail.com","mobile":"9619278329"},{"name":"GOPENDRA H GANDHI","email":"amish.gandhi1972@gmail.com","mobile":"9324355933"},{"name":"MINISH BABULAL SHAH - Chetan Sir","email":"minishshah2010@gmail.com","mobile":"9821154363"},{"name":"SATISH SORILAL SETH","email":"amsseth@gmail.com","mobile":"9870463413"},{"name":"DEEPAK ANANTRAI SHAH","email":"info@pratikcorporation.com","mobile":"9920077459"},{"name":"ANIL MANSUKHLAL DOSHI","email":"paragdoshi9@gmail.com","mobile":"9820680304"},{"name":"BIPIN RAMANLAL SHAH","email":"bipinrshah3854@gmail.com","mobile":"9820129575"},{"name":"MAHESH N SANGHAVI - Chetan Sir","email":"arhamagencies@gmail.com","mobile":"9821230943"},{"name":"JAGDISH A MIRCHANDANI","email":"vhsinfotech@yahoo.co.in","mobile":"9820065227"},{"name":"ATUL BABULAL DESAI","email":"mihirdesai79@yahoo.com","mobile":"9820483424"},{"name":"CHETAN P MEHTA","email":"nupur.mehta14@gmail.com","mobile":"9322271391"},{"name":"BHARAT BABULAL SHARMA","email":"bharatshaarma@gmail.com","mobile":"9869270749"},{"name":"SANJAY C PAREKH","email":"sanjayparekh187@gmail.com","mobile":"9870599909"},{"name":"CHETAN KISHOR SHAH","email":"masterschetan@gmail.com","mobile":"9324273030"},{"name":"DEEPAK KASHINATH JADHAV","email":"kkunalj1@gmail.com","mobile":"9987002841"},{"name":"DINESH T SANGHAVI","email":"sanghavi.devang@gmail.com","mobile":"9702876464"},{"name":"KAUSHAL KIRTI DESAI","email":NaN,"mobile":"9820142554"},{"name":"DHANESH MANILAL SHAH","email":"dhaneshshah60@gmail.com","mobile":"9819709010"},{"name":"JAYESH C PATEL","email":"jayeshpatellighting@gmail.com","mobile":"9821118121"},{"name":"KAMLESH JAYANTILAL MEHTA","email":"kamleshmehta108@gmail.com","mobile":"9819198335"},{"name":"KAMAL GIRISH KAMDAR","email":"kamal_kamdar@yahoo.com","mobile":"9821727340"},{"name":"VIMAL VIJAY LAKHANI","email":"vimalakhani@gmail.com","mobile":"9820360320"},{"name":"RAYOMAND JAL ENGINEER","email":"captrayo@yahoo.com","mobile":"9323251393"},{"name":"NIRAV NARENDRA SHAH - Chetan sir","email":"menirav@gmail.com","mobile":"9920086551"},{"name":"JAYESH HARAKHCHAND SHAH","email":"jayeshshah_hk@yahoo.in","mobile":"9323901752"},{"name":"PRATIK SUBHASH SHAH","email":"pratikworld111@gmail.com","mobile":"9323905077"},{"name":"AMULAKH L SALOT","email":NaN,"mobile":"9867675651"},{"name":"VIKRAM JITENDRA SHAH","email":"vik8595@yahoo.co.in","mobile":"8879566603"},{"name":"KANTILAL N PATEL","email":"p.kamlesh08@gmail.com","mobile":"9909577844"},{"name":"KANUBHAI H BHAYANI","email":"nainesh.17@hotmail.com","mobile":"9819974926"},{"name":"ASHISH BAKUL SHAH","email":NaN,"mobile":NaN},{"name":"NIKHIL NARENDRA SHAH","email":"shahdoc70@yahoo.com","mobile":"9821149376"},{"name":"SACHIN DINESH VORA","email":"vorasachin@yahoo.com","mobile":"9699973399"},{"name":"SHASHI VASANTRAI PAREKH","email":"shashi_abhushan@yahoo.co.in","mobile":"9820071437"},{"name":"VANDANA MANISH BODA","email":"vmboda17@gmail.com","mobile":"9322299167"},{"name":"CHIRAG NEMCHAND SHAH","email":"kavishchirag@gmail.com","mobile":"9833853238"},{"name":"VISHAL ATUL MEHTA","email":"kamalphotoparle@gmail.com","mobile":"9321519777"},{"name":"ARVIND THAKARSHI PATEL","email":"arvindbhaipatel826@gmail.Com","mobile":"8160118475"},{"name":"AMIRALI G SUTARIA","email":NaN,"mobile":"9833146175"},{"name":"AMIRUDDIN B HAVELIWAL","email":NaN,"mobile":"9323124534"},{"name":"AMEET G KAMDAR","email":"ameetkamdar@gmail.com","mobile":"9322052770"},{"name":"ANIL KANTILAL SHAH","email":NaN,"mobile":NaN},{"name":"ANILKUMAR G LOHIYA","email":NaN,"mobile":NaN},{"name":"ANJANI G KUMAR","email":"anjani.isukapalli@gmail.com","mobile":"9440263127"},{"name":"ARVIND J TIWARI","email":"caajtiwari@gmail.com","mobile":"9869149520"},{"name":"ASHISH V POPTANI","email":NaN,"mobile":"9833369552"},{"name":"ASHOK VADILAL BHAYANI","email":NaN,"mobile":NaN},{"name":"ASHOK VASANJI CHHEDA","email":NaN,"mobile":NaN},{"name":"SHEELA ASHOK GANDHI","email":"asgmmm@gmail.com","mobile":"9323962634"},{"name":"NEHA ASHWIN SHAH","email":"shahashwin44@gmail.com","mobile":"9969492922"},{"name":"BAKULESH N DALAL","email":NaN,"mobile":NaN},{"name":"BALKRISHNA N VISRODIA","email":NaN,"mobile":"9892438648"},{"name":"BHADRESH K SHAH","email":"hetav7@yahoo.com","mobile":"9224643639"},{"name":"BHAIYYASAHEB K BORSE","email":"borsebk999@gmail.com","mobile":"9892972184"},{"name":"BHAVESH NAVIN JAGANI","email":NaN,"mobile":NaN},{"name":"BRIJESH R DWIVEDI","email":"brijesh_dwivedi29@rediffmail.com","mobile":"9845351879"},{"name":"CHIRAG N SHANGHAVI","email":"nikhita1983@yahoo.co.in","mobile":"9820067109"},{"name":"CYRIL JOHN BARBOZA","email":"joelbaarboza94@yahoo.com","mobile":"9820290488"},{"name":"DATTARAM D KUMKAR","email":"ddkumkar1968@gmail.com","mobile":"9920403912"},{"name":"DEBORAH R PEREIRA","email":"acp.rolfie@yahoo.com0","mobile":"9820244633"},{"name":"DEEPAK V BHAYANI","email":NaN,"mobile":"9819974926"},{"name":"DEEPAK NATWARLAL SHAH","email":NaN,"mobile":"9892117125"},{"name":"DHIRENDRA LALJI GALA","email":NaN,"mobile":NaN},{"name":"DILIP BACHUBHAI PARMAR","email":"parmardilip2006@gmail.com","mobile":"9869036892"},{"name":"DIXIT J THAKKAR","email":NaN,"mobile":"9372356569"},{"name":"FAZAL LATIF PATKA","email":"fahadpatka@gmail.com","mobile":"9820133144"},{"name":"HARESH SHANTILAL GANDHI","email":"abc@dummy.com","mobile":"9323448668"},{"name":"HEMANT BHOSLE","email":NaN,"mobile":"9920403912"},{"name":"HITESH RAMESH DAVE","email":"htshdave26@gmail.com","mobile":"9821287615"},{"name":"INDRAVADAN RATILAL THAR","email":"ojasthar@gmail.com","mobile":"9967101401"},{"name":"JIGNESH PRABHUDAS SHAH","email":"skychem2012@gmail.com","mobile":"9320331696"},{"name":"KALPESH PRAVIN LAL","email":"kalpeshlal@gmail.com","mobile":"9377143131"},{"name":"KAUSHAL JYOTIENDRA JOSHI","email":"kaushaljj1@gmail.com","mobile":"9833138792"},{"name":"LALIT NAVIN SHAH","email":"ishah0303@gmail.com","mobile":"9820138356"},{"name":"JIGAR MAHESH GANDHI","email":"jigs_passion@yahoo.com","mobile":"8879666207"},{"name":"MAHESH VINODLAL MODY","email":"moody369@yahoo.com","mobile":"9820453094"},{"name":"MALAY BHARAT SHAH","email":"malayshah2000@gmail.com","mobile":"7666404141"},{"name":"MANISH SURESH GAIKWAD","email":"manish.gaikwad15@gmail.com","mobile":"9820033070"},{"name":"MEHUL DINESH SANGHAVI","email":"mehulds@hotmail.com","mobile":"9820170996"},{"name":"MONARCH SUDHIR BAXI","email":"baximonarch@hotmail.com","mobile":"9892055600"},{"name":"PRABODH RAMJI SANGHAVI","email":NaN,"mobile":"9699360036"},{"name":"PRAKASH MAHADEO KADAM","email":"prakashshubhamkadam1011@gmail.com","mobile":"9869381152"},{"name":"PRANAV HARSHADRAI VORA","email":"pranavvr54@gmail.com","mobile":"9223228072"},{"name":"PRASHANT MAHENDRA PATEL","email":"prashism@gmail.com","mobile":"9820471583"},{"name":"PUNIT KIRAN VORA","email":"punitvora2003@yahoo.co.in","mobile":"9820599728"},{"name":"RUSHABH HARSHAD SHAH","email":"rushabh@qci.in","mobile":"9820152952"},{"name":"SANDEEP CHANDRAKANT DOSHI","email":"suneximp@yahoo.com","mobile":"9833666191"},{"name":"SANJAY SHANTILAL SHAH","email":NaN,"mobile":"9323289209"},{"name":"SHAILESH DAMJEE SHAH","email":"skregal@gmail.com","mobile":"9870077879"},{"name":"SUBODHKUMAR N BHAGAT","email":"skumarbhagat04@gmail.com","mobile":"7715846521"},{"name":"SUNIL HASMUKH JHAVERI","email":"suniljhaveri.2011@rediffmail.com","mobile":"9820046763"},{"name":"VIJAY PRABHUDAS GANGANI","email":"gangani.vijay@gmail.com","mobile":"9969948620"},{"name":"VIKAS NAVIN KOTHARI","email":"kotharivikas99@yahoo.in","mobile":"9322277838"},{"name":"VIPUL BHARAT PAREKH","email":"vipul.b.parekh@gmail.com","mobile":"9820357999"},{"name":"VIPUL PRAVIN LAL","email":"vipullal99@gmail.com","mobile":"9324523725"},{"name":"VIRAL DHANESH GANDHI","email":"mitalvgandhi@gmail.com","mobile":"9323534767"},{"name":"VISHAL SATISH KAPOOR","email":"vishkap32@hotmail.com","mobile":"9699778188"},{"name":"SHAMIM YUSUF SAHERWALA","email":"shamims1711@gmail.com","mobile":"9969072108"},{"name":"HETAL DHARMESH JHAVERI","email":"jhaverihetal78@gmail.com","mobile":"9820463731"},{"name":"VIJAY BHALCHANDRA BHATT","email":"pbhatt12@yahoo.co.in","mobile":"9821419693"},{"name":"DEVENDRA BIPIN KHARA","email":"dkhara@dcinfotech.com","mobile":"9869125605"},{"name":"VIKRAM NALIN SANGHAVI","email":"sanghvipolymers07@gmail.com","mobile":"9820977370"},{"name":"ASHWIN PREMCHAND SHAH","email":"aspenworld@yahoo.com","mobile":"9833175747"},{"name":"JAYESH SUDHIRBHAI KHARA","email":"kahanimpex@gmail.com","mobile":"9869125603"},{"name":"DEEPAK KANTILAL SHAH","email":"deepak@bhoomiassociate.com","mobile":"9820065439"},{"name":"AMEET KANTILAL SHAH","email":"amideep1986@yahoo.co.in","mobile":"9820307893"},{"name":"CHETAN JITEN SHAH","email":"shah_hiten1@yahoo.com","mobile":"9664889487"},{"name":"GANGADHARAN S SANIL (REF JEEVAN AMIN)","email":"gee1amin@gmail.com","mobile":"9819922547"},{"name":"NILESH PRAVINCHANDRA DOSHI","email":"nilesh@smitexports.com","mobile":"9867024026"},{"name":"ZOHRA MOIZ SHAHERWALLA","email":"s.zohra@gmail.com","mobile":"9820791902"},{"name":"VIPUL HASMUKHLAL SHAH","email":"shah.hirva@gmail.com","mobile":"9920407666"},{"name":"RUPESH DILIP KAMDAR","email":"kamdarrupesh90@gmail.com","mobile":"9920253300"},{"name":"ASHIT KISHAN DESAI","email":"desaiash2779@gmail.com","mobile":"9821588698"},{"name":"ASHISH VIJAY SHAH","email":"ashish9n@yahoo.co.in","mobile":"9892087262"},{"name":"RAJESH GUNWANT KAMDAR","email":"rajukamdar63@gmail.com","mobile":"9757374747"},{"name":"RAKESH RAJESH GANDHI","email":"arch.rakeshgandhi@gmail.com","mobile":"9820407008"},{"name":"HARSH DEEPAKBHAI DALAL","email":NaN,"mobile":"9819079110"},{"name":"NEHUL SHARAD MEHTA","email":"nmgroups11@gmail.com","mobile":"9820931911"},{"name":"KAMLAKAR AJABARAO BORSE","email":"kamlakarborse@gmail.com","mobile":"9821783809"},{"name":"ASHISH SHANTILAL PANCHAL","email":"pooja.panchal@vodafone.com","mobile":"9885274321"},{"name":"KASHINATH DADU GURAV","email":"guravkashi@yahoo.co.in","mobile":"8828890636"},{"name":"NIKUNJ PRAVIN SHAH","email":"shah_nikunj@yahoo.com","mobile":"9324951450"},{"name":"HITESH DAYALJI PARMAR","email":"hitesh614@rediffmail.com","mobile":"9820102107"},{"name":"RAJESH LALIT SALOT","email":NaN,"mobile":"9892105953"},{"name":"VIPUL SATISH MISTRY","email":"vipulsmistry@gmail.com","mobile":"9820199477"},{"name":"MAYANK AVINASH PATWARDHAN","email":"mayank.patwardhan@gmail.com","mobile":"8879704542"},{"name":"MAYUR RAMNIKLAL KAMDAR","email":"mayurkamdar26@gmail.com","mobile":"9819733288"},{"name":"NEEMESH ASHWIN SHAH","email":"neemesh@knsarchitects.com","mobile":"9820155065"},{"name":"HITESH DEEPAK PAREKH","email":"hiteshparek@gmail.com","mobile":"9820021170"},{"name":"BHARAT KISHOR NAGRECHA","email":"nagrechab@gmail.com","mobile":"9323217850"},{"name":"GIRISH MAGANLAL DHOLAKIA","email":"gireeshdholakia@gmail.com","mobile":"9820832574"},{"name":"HITESH BAVISHI","email":NaN,"mobile":"9820222125"},{"name":"SEJAL ASHISH SHAH","email":"sejaldocshah@rediffmail.com","mobile":"9867652474"},{"name":"DEVANG RAMESH DOSHI","email":"mananenterprisesales@gmail.com","mobile":"9820832440"},{"name":"SANDEEP SURESH DOSHI","email":"sandeepdoshi74@gmail.com","mobile":"9323911984"},{"name":"RAMNIK J GALA","email":"ramnikgala18@gmail.com","mobile":"9867760229"},{"name":"SAKINA S ANTELAWALA","email":"sakinaantelawala@gmail.com","mobile":"9821599582"},{"name":"KIRTI KARMSHI NAGDA - Chetan Sir","email":"kirti_nagda@yahoo.com","mobile":"9867245256"},{"name":"SURESH M SHAH","email":NaN,"mobile":NaN},{"name":"SURESH DHAKTU VEDRE","email":"sureshvedre@gmail.com","mobile":"9320273232"},{"name":"BHAKTI DINESH MISTRY","email":NaN,"mobile":"2264141276"},{"name":"SUDHIR SHIRIPAD KULKARNI","email":"kulkaruna@gmail.com","mobile":"9322404099"},{"name":"DARSHAN ASHOK DOSHI","email":"alloysteel@gmail.com","mobile":"9322226641"},{"name":"ANUPAM NARAYAN JOSHI","email":NaN,"mobile":"9167606490"},{"name":"ASIF DILDAR SIDDIQUE","email":"siddiqueasad@gmail.com","mobile":"9821246415"},{"name":"AJIT RAMRAKHA BHASKAR","email":"kaarsin@gmail.com","mobile":"9820242114"},{"name":"ARVINDBHAI KANTILAL DOSHI","email":"doshi82@hotmail.com","mobile":"9821130108"},{"name":"DEVENDRA CHANDULAL GANDHI","email":"nimeshgandhi07@gmail.com","mobile":"7738129834"},{"name":"SHAILESH BHAILAL KOTHARI","email":"jeelkothari1993@gmail.com","mobile":"9820274513"},{"name":"ABHISHEKH WAIRAGADE","email":"crwairagade@gmail.com","mobile":"9766255644"},{"name":"BRUNO MIRANDA","email":"brunoherman.miranda@gmail.com","mobile":"9819807302"},{"name":"BHANJIBHAI RANCHOD PATEL","email":"bhanji20558@gmail.com","mobile":"9892601726"},{"name":"BHANUBEN NARSHI CHOTALIA","email":NaN,"mobile":"8097371779"},{"name":"ARVIND DEVJI PATEL","email":"arvindgami66@yahoo.in","mobile":"9820773986"},{"name":"BHAGWAN J TAHILINI","email":NaN,"mobile":"9820046412"},{"name":"ALIASGAR HUSENI KAKAL","email":"akakal1@hotmail.com","mobile":"9820920566"},{"name":"MELITA DINA FERNANDES","email":"melitafernandes0804@gmail.com","mobile":"9833866341"},{"name":"OMPRAKASH A PRAJAPAT","email":NaN,"mobile":"7900011141"},{"name":"KAUSHIK KANTILAL DHANKI","email":"kaushikdhanki@rediffmail.com","mobile":"9323134026"},{"name":"MAHESH NIWAS SAWANT","email":"maheshnnsawant@gmail.com","mobile":"9820308582"},{"name":"CHAMPAKLAL KESHAVLAL SHAH","email":"shahnirav1976@yahoo.com","mobile":"9820242638"},{"name":"VINAY KESHORAM KAPOOR","email":"kapoorvinay167@gmail.com","mobile":"9833079210"},{"name":"PARESH VASANTLAL MASALIA","email":"pareshmasalia@gmail.com","mobile":"9820234480"},{"name":"VASANTLAL VANECHAND MEHTA","email":"vipulvvm@gmail.com","mobile":"9224427799"},{"name":"VIRENDRA BABUBHAI SHAH","email":"vijay.virendra.shah@gmail.com","mobile":"9769803153"},{"name":"SUMAN JAYESH KHANDELWAL","email":NaN,"mobile":NaN},{"name":"NARAYAN BHAUSAHEB GADEKAR","email":"samarthimport14@yahoo.com","mobile":"9867023721"},{"name":"Vidyesh Badal ","email":"hemalatabadal@gmail.com","mobile":"9833326252"},{"name":"VIPIN MOHANLAL JAIN","email":"sanyacorp@hotmail.com","mobile":"9322253585"},{"name":"RANJIT NAGINDAS SHAH","email":"shahrn06@gmail.com","mobile":"9322892429"},{"name":"MANHARBHAI JEEVAN KAPDIYA","email":NaN,"mobile":"9879874570"},{"name":"SWAPAN P DEVNATH","email":"bobbydebnath2@gmail.com","mobile":"9867178212"},{"name":"SAIFUDDIN N BIVIJI","email":"nazninbiviji@gmail.com","mobile":"9820621049"},{"name":"MUKESH SUMANTCHANDRA MEHTA","email":"texindin@yahoo.co.in","mobile":"9820141167"},{"name":"GAUTAM RAJNIKANT SHAH","email":"futureactuary@gmail.com","mobile":"9867067705"},{"name":"PANKAJ RAMJIBHAI VITHANI","email":NaN,"mobile":"9870175425"},{"name":"PARESH BAKUL SHAH","email":"bakulshah@hotmail.com","mobile":"9821093053"},{"name":"JAYESH HASMUKHRAI DOSHI","email":"jpint123@yahoo.com","mobile":"9821020039"},{"name":"MILIND SURESH SHAH","email":"milindsshah73@gmail.com","mobile":"9322510257"},{"name":"NIRU BHATIA","email":"nirubhatia@hotmail.com","mobile":"9322342321"},{"name":"PANKAJ MANSUKHLAL SHAH","email":NaN,"mobile":"9870786334"},{"name":"HITENDRA MANSUKHLAL SHAH","email":"hitendramshah@gmail.com","mobile":"9821111086"},{"name":"HIREN DINESH SHAH","email":"hirenshahhelp1984@gmail.com","mobile":"9773392361"},{"name":"GAURAV SATISH KAPOOR","email":"vishkap32@hotmail.com","mobile":"9869588188"},{"name":"RAKESH RAVINDRA DWIVEDI","email":"shady90299@gmail.com","mobile":"9821276747"},{"name":"SACHIN G KARDEKAR","email":NaN,"mobile":NaN},{"name":"NILESH ABHAYKUMAR DOSHI","email":"mehnil@rediffmail.com","mobile":"9870122903"},{"name":"PANKAJ MADHUSUDAN PARIKH","email":"pankaj2703@yahoo.co.in","mobile":"9820826049"},{"name":"VASANJI UMARSHI GALA","email":NaN,"mobile":"9819549245"},{"name":"RAMESH SURYAJI GURAV","email":"rameshgurav74@gmail.com","mobile":"9870419870"},{"name":"DEEPAK BHAGWANBHAI JETHWA","email":NaN,"mobile":"9892014123"},{"name":"JITEN VIRAL CHOKSHI - ref ketan gic ","email":"jitenchoksi@hotmail.com","mobile":"9892375745"},{"name":"DINESH B PRAJAPATI","email":NaN,"mobile":"9892908469"},{"name":"BHASKAR VRAJLAL SHAH","email":"bhaskarshah50@gmail.com","mobile":"9137511081"},{"name":"MUNAF ABDUL SHAIKH","email":"sohashaikh1993@gmail.com","mobile":"9819325679"},{"name":"CHIRAG P SANGHAVI","email":"chiragpsanghavi@gmail.com","mobile":"9819480031"},{"name":"ARPIT PRATAPBHAI SHAH","email":"arpitandco@gmail.com","mobile":"9819064663"},{"name":"ILAXI PRATAP SHAH","email":NaN,"mobile":NaN},{"name":"VIJAY SAKHARAM CHIKNE","email":NaN,"mobile":"9004801943"},{"name":"SUHAIL SHAUKAT SIDDQUE","email":"suhailsiddique@yahoo.com","mobile":"9820771159"},{"name":"SUNEETA YESHWANT RAO","email":"reeyasha11@gmail.com","mobile":"9324541093"},{"name":"SHEETAL HASMUKH PARMAR","email":"sheetal.343@gmail.com","mobile":"9820791730"},{"name":"SAMIR MANHARALAL SHAH","email":"amitshah830@gmail.com","mobile":"9867509139"},{"name":"SHAUKAT AMIT SIDDIQUE","email":"shoebsiddique2017@gmail.com","mobile":"9820786998"},{"name":"SACHIN HARENDRA SHETH","email":"sachin_sheth11@yahoo.com","mobile":"9821576769"},{"name":"NITENDRA DAMJI MAKWANA","email":"makwananitendra@gmail.com","mobile":"9323303743"},{"name":"SUNIL ANIL BHATIA","email":"julanions@rediffmail.com","mobile":"9421430194"},{"name":"RAMDARASH MAHANGU SINGH","email":"ramji123.singh@gmail.com","mobile":"9699158702"},{"name":"RASHMIKANT NAGINDAS SHAH","email":"shahkaranr@gmail.com","mobile":"9821590960"},{"name":"JITENDRA MADHUKAR NAIK","email":"jmnaik2011@gmail.com","mobile":"9323178191"},{"name":"RAJESH NANJI SOLANKI","email":"solanki.ankit1@gmail.com","mobile":"9820600109"},{"name":"TEJAS HASMUKH SHAH - Chetan Sir","email":"tejasshah999@rediffmail.com","mobile":"9867977722"},{"name":"PRAVINCHANDRA R DOSHI","email":"triangledesigns@yahoo.com","mobile":"9769941972"},{"name":"BHARAT P SHAH","email":"bharatshah54@gmail.com","mobile":"9821041750"},{"name":"HITENDRA H VASA","email":"hvasa20@gmail.com","mobile":"9324261824"},{"name":"HIMANSHU SANGHAVI","email":"hemanshusanghavi@rediffmail.com","mobile":"7506312883"},{"name":"SHEETAL PATIL","email":NaN,"mobile":"9820359068"},{"name":"BHARAT JASWANT SHETH","email":"bharatjsheth@hotmail.com","mobile":"9820936607"},{"name":"CHANDRAKANT NAGARDAS DOSHI","email":NaN,"mobile":NaN},{"name":"HITEN DHIRAJLAL SHAH","email":"trimsnbeyond@gmail.com","mobile":"9769044949"},{"name":"DHARTI TRIVEDI","email":NaN,"mobile":"9284550243"},{"name":"YASHODHARA SHRIDHAR DESHPANDE","email":"shorasd@gmail.com","mobile":"9004810389"},{"name":"DHANANJAY BABURAO PATIL - Chetan Sir","email":"dbpatilmpcb@gmail.com","mobile":"8806688006"},{"name":"HARSHADRAI K DOSHI","email":NaN,"mobile":"9867281918"},{"name":"DHIRAJ DEVRAJ VADHAN","email":"dhirajvadhan@gmail.com","mobile":"9833688646"},{"name":"AMITABH BALKRISHNA MALVIYA","email":"amitabhmalviya@yahoo.com","mobile":"9892332168"},{"name":"MRUDULA ASHWIN JOSHI","email":"anujjoshi1910@gmail.com","mobile":"7045549466"},{"name":"MAHESH RAMJI JOSHI","email":"mkb8910@gmail.com","mobile":"9820753476"},{"name":"GOPAL RAMCHANDRA BHISE","email":"bhisesonal87@gmail.com","mobile":"9664725369"},{"name":"KETAN VINAY SHAH - Chetan Sir","email":"rajyog_ketan@rediffmail.com","mobile":"9867677722"},{"name":"KARTIK NAVIN CHHEDA","email":"k241@rediffmail.com","mobile":"9619403633"},{"name":"VISHALSINGH RAVINDRASINGH RAJPUT","email":"rajput.mpcb@gmail.com","mobile":"9372442151"},{"name":"HARESH PESSUMAL BHATIA","email":"hareshbhatia34@gmail.com","mobile":"9821884369"},{"name":"MIHIR KUMUDCHANDRA MEHTA","email":"dishumeht@gmail.com","mobile":"9920105854"},{"name":"SANTOSH DHAKTU VEDRE","email":"santosh.vedre14@gmail.com","mobile":"9833090121"},{"name":"SUNIL MADHUKAR JADHAV","email":NaN,"mobile":NaN},{"name":"JAYSUKHLAL HIRALAL SHAH","email":"heart13287@gmail.com","mobile":"9723440532"},{"name":"SWATI BHAVIK SHAH","email":"swatibs@gmail.com","mobile":"9004404448"},{"name":"GAUTAM NAVIN SHAH - Chetan Sir","email":"ca.gautamshah@jkkg.in","mobile":"9821149285"},{"name":"RAJESH CHHOTUBHAI PATEL","email":NaN,"mobile":"9869100747"},{"name":"BHARTI DEEPAK PATEL","email":"jaimin_100@yahoo.com","mobile":"9773564871"},{"name":"THELMA GEORGE ALVARES","email":"thelma.alvares@yahoo.com","mobile":"9820629124"},{"name":"VASUDHA RAMAKANT WADKAR","email":NaN,"mobile":"9322318328"},{"name":"NILESH KIRTI SHAH","email":"shahdipti482@gmail.com","mobile":NaN},{"name":"PARIMAL GUNVANTRAI MAKWANA","email":"ptechnoworks@gmail.com","mobile":"9833311901"},{"name":"NILESH SURESH PATIL","email":NaN,"mobile":"9768458480"},{"name":"BHARAT RAMNIKLAL SHAH","email":"sronak158@gmail.com","mobile":"9833554084"},{"name":"SUNIL RAMNIKLAL SHAH","email":"aakansha28_shah@yahoo.com","mobile":"9870524706"},{"name":"RAJESH SUNIL THERADE","email":"rajesht153@rediffmail.com","mobile":"9823068735"},{"name":"SATISH SUNIL KAPOOR","email":NaN,"mobile":"9869588188"},{"name":"NIRANJANA D SHAH","email":"aparnashah0312@yahoo.com","mobile":"9870107239"},{"name":"KIRTI A MEHER","email":"pritik2006@yahoo.co.in","mobile":"7506745302"},{"name":"MAHASUKH DILIP SHAH","email":NaN,"mobile":NaN},{"name":"RAMESH RANGNATH GHODEKAR","email":"ramesh_rrg@rediffmail.com","mobile":"9773428322"},{"name":"DINESH KANTILAL DOSHI","email":NaN,"mobile":NaN},{"name":"PRAKASH GANGARAM DALVI","email":NaN,"mobile":NaN},{"name":"MANGESH BHAGOJI LAD","email":NaN,"mobile":NaN},{"name":"SAMIR DHONDU LAD","email":NaN,"mobile":NaN},{"name":"SUNIL SAKHARAM DOMBAL","email":NaN,"mobile":NaN},{"name":"MAHESH SURESH SHIGAVAN","email":NaN,"mobile":NaN},{"name":"PRADIP DHONDU LAD","email":"slad51382@gmail.com","mobile":"9324323832"},{"name":"HITESH TUSHAR PANDYA","email":"hitesh_pandya10@yahoo.com","mobile":"9820165410"},{"name":"MISHAL B FURNITUREWALA","email":"mishalb@gmail.com","mobile":"9820556236"},{"name":"GRACY WILSON MARTIS","email":NaN,"mobile":NaN},{"name":"HEMANG MAHESH BAKSHI","email":"hemangbakshi@me.com","mobile":"9833130964"},{"name":"MANOJ MANTAPRASAD RAI","email":"r_rai123@rediffmail.com","mobile":"9594878674"},{"name":"SWATI MANOHAR MATAL","email":"swati_matal@rediffmail.com","mobile":"9664725370"},{"name":"KIRTI DEVJI PATEL","email":"gamialpesh82@yahoo.com","mobile":"9867344048"},{"name":"AMIT KUMAR SINGH","email":"theamitsingh@gmail.com","mobile":"9930976819"},{"name":"SHRADDHA K AGRAWAL","email":NaN,"mobile":NaN},{"name":"MONALI SURESH GAIKWAD","email":"mona.gaikwad@gmail.com","mobile":"9819080532"},{"name":"PRAVIN NANJI GALA","email":"k10_22@yahoo.co.in","mobile":"9967158144"},{"name":"SHAILESH NANJI GALA","email":"shaileshgala64@gmail.com","mobile":"9820425660"},{"name":"PARVEEN YASEEN LAKHANI","email":"parveen.lakhani@gmail.com","mobile":"9833881648"},{"name":"TANSUKHLAL SHAILESH PALAN","email":"siltonpolymers@gmail.com","mobile":"9320052561"},{"name":"NEERAV MUKESH MEHTA","email":"neerav.mehta87@gmail.com","mobile":"9820091625"},{"name":"GAURANG MUKESH DASONDI","email":NaN,"mobile":NaN},{"name":"DIVYANSHU KANTILAL GANDHI","email":"sneetdgandhi@gmail.com","mobile":"9833177798"},{"name":"SHAGUN R DUDHARA","email":NaN,"mobile":NaN},{"name":"VARSHA S VARIYA","email":NaN,"mobile":NaN},{"name":"TUSHAR K SHAH","email":NaN,"mobile":NaN},{"name":"SONALI HEMANT SHAH","email":"mybeautifulife@hotmail.com","mobile":"9820333059"},{"name":"HARSHA SANJAY TRIVEDI","email":NaN,"mobile":NaN},{"name":"KRISHNA DEEPAK MIRCHANDANI","email":NaN,"mobile":"9822031528"},{"name":"BIPIN PARMANAND DOSHI","email":NaN,"mobile":NaN},{"name":"VASUDEVA SANJEEVA RAO","email":"starelevators7@hotmail.com","mobile":"9820328892"},{"name":"DANESHKUMAR BHAGVANDAS SHAH","email":NaN,"mobile":"9820756997"},{"name":"SAMEER SHRIKANT BAPAT","email":"sameersb@labindia.com","mobile":"9821154576"},{"name":"VIREN DHANSUKH MAYANI","email":"viren.mayani@gmail.com","mobile":"9920185402"},{"name":"AMIT DHANSUKH MAYANI","email":"amitca2003@yahoo.com","mobile":"9867695198"},{"name":"SALIM LALANI","email":"sblalani@hotmail.com","mobile":"9380303100"},{"name":"AKANSHA KUMAR KHANNA","email":"akansha.khanna@gmail.com","mobile":"9892424838"},{"name":"YOGESH SADASHIV GOTHANKAR","email":NaN,"mobile":"9029646010"},{"name":"GANESH ANANT SALVI","email":NaN,"mobile":"9029892603"},{"name":"VIKAS ABHIMANYU GUPTA - Chetan sir","email":"vikas@technologyandgadgets.com","mobile":"9819003100"},{"name":"RINKAN BHARAT SHAH","email":"rinkan2001@hotmail.com","mobile":"9619460789"},{"name":"NITIN RINKAN SHAH","email":"reeyasha11@gmail.com","mobile":"9322695098"},{"name":"SHAILENDRA BHALCHANDRA GANORE","email":"shailendra.magna@gmail.com","mobile":"7506124129"},{"name":"GIRISH DADARAO WIGHE","email":"girish.wighe@jsw.in","mobile":"9970390550"},{"name":"INDIRA JAYDEV MEHTA","email":"v.enterprise2011@gmail.com","mobile":"9820932589"},{"name":"ATUL POPATLAL GANDHI","email":"apgbroking@gmail.com","mobile":"9820731572"},{"name":"ARJUN SUDHAKAR DUKANE - Chetan Sir","email":"arjun.dukane@camlinfs.com","mobile":"9819549541"},{"name":"NITIN BHALCHANDRA TEKADE","email":NaN,"mobile":"9960670400"},{"name":"NARAYAN JAKHU PATEL","email":NaN,"mobile":NaN},{"name":"REKHA JAYANT MEHTA","email":NaN,"mobile":"9769336798"},{"name":"KERSI FRAMROZ HODIWALLA","email":NaN,"mobile":NaN},{"name":"SUNIL NAMDEO KOLTE","email":"sunilkolte11@yahoo.com","mobile":"9969230555"},{"name":"HEENA RAHUL SHAH","email":"heena@hindoostan.com","mobile":"9833137745"},{"name":"PRADEEP LAHU MHATRE","email":"pradipmatare30@gmail.com","mobile":"7387068320"},{"name":"JAYWANTI JAYRAM MANDAVKAR","email":NaN,"mobile":"9867140653"},{"name":"VIJAY PUNDALIK PATIL","email":"vppatil1961@gmail.com","mobile":"9833599554"},{"name":"MURTUZA JUZER MATIWALA","email":"jumana.matiwala@yahoo.com","mobile":"9820923600"},{"name":"SAILAXMI K KOTHARI","email":NaN,"mobile":NaN},{"name":NaN,"email":NaN,"mobile":NaN},{"name":"KENAL DILIP SHAH","email":"drkenalshah@gmail.com","mobile":"8898898075"},{"name":"NISHA TUSHAR VADALIA","email":"nisha.t.vadalia@gmail.com","mobile":"8879548343"},{"name":"MANGESH SHANKAR PARAB","email":"emailme.mangesh@rediffmail.com","mobile":"9930407651"},{"name":"GISELLE MIRANDA","email":"gsllmiranda@yahoo.co.in","mobile":"9833007209"},{"name":"SNEHA MANOHAR GUJRATHI","email":"yogesh.londhe@gmail.com","mobile":"9819126579"},{"name":"SUMIT PRAVINCHANDRA MEHTA","email":"mehtasumit1976@gmail.com","mobile":"9819344358"},{"name":"SANTOSH PRAKASH CHINKATE","email":NaN,"mobile":NaN},{"name":"GAUTAM RUPCHAND SHINDE","email":NaN,"mobile":NaN},{"name":"DEVANG MISTRY","email":"mistrydevang@gmail.com","mobile":NaN},{"name":"JIGNESH NAVINCHANDRA DIORA","email":"navinjew@rediffmail.com","mobile":"9321259735"},{"name":"NAVIN C SHETH","email":NaN,"mobile":NaN},{"name":"VINODBHAI SHAH","email":"s_alpesh@hotmail.com","mobile":"9821156154"},{"name":"KAVITA ARUN RAWOOL","email":"amarawool@gmail.com","mobile":"9930534044"},{"name":"GIRIJA MOHAN PARMESHWARAN - chetan Sir","email":"girijamohan267@hotmail.com","mobile":"9819196242"},{"name":"DIPESH JITENDRA KOTHARI","email":"dipesh.kothari@hotmail.com","mobile":"8080043126"},{"name":"MANISH BHARAT MEHTA","email":"alpsmmehta@gmail.com","mobile":"9320669796"},{"name":"JOHN SIMON MUKKATH","email":NaN,"mobile":NaN},{"name":"FEROZE SOLY SETHNA","email":"feroze@ferozefoods.com","mobile":"9920017581"},{"name":"AMISH PRABODHCHANDRA MEHTA - Chetan Sir","email":"amish@mehtavalves.com","mobile":"9820870254"},{"name":"SANJAY PRABODH MEHTA - Chetan Sir","email":"sanjay@mehtavalves.com","mobile":"9323145994"},{"name":"GAUTAM PRAVIN MEHTA - Chetan Sir","email":"gautam@mehtavalves.com","mobile":"9323121661"},{"name":"NITIN NARAYAN MESTRY","email":"gurubhakti22@gmail.com","mobile":"9930140866"},{"name":"PULIN HARSHAD GORADIA","email":"pulingoradia@hotmail.com","mobile":"9320282875"},{"name":"HITESH D GANDHI","email":"pratikhgandhi@gmail.com","mobile":"9820515111"},{"name":"AARTI HIRAMANI SINGH","email":"aartisingh1991aa@gmail.com","mobile":"9004070164"},{"name":"PULIN DHIRAJ SHAH","email":"pulindshah@gmail.com","mobile":"9820000163"},{"name":"HARSHAD SHANTILAL SHAH -Chetan Sir","email":"harshad@qci.in","mobile":"9820088378"},{"name":"MUKESH SHANTILAL SHAH -Chetan Sir","email":"mukesh@qci.in","mobile":"9820069577"},{"name":"PARSHVA RAMESH MEHTA","email":"parshvarmehta@gmail.com","mobile":"9820025698"},{"name":"NIHAR NARENDRA POPAT","email":"mona@knsarchitects.com","mobile":"9223182117"},{"name":"BIPIN MANSUKHLAL SHAH","email":"bipinshahp4@gmail.com","mobile":"9821096334"},{"name":"SAMEER POPATLAL GALA","email":"gala_sameer@hotmail.com","mobile":"9869543477"},{"name":"MALAY SURESH SHAH","email":"malaytokyo@yahoo.com","mobile":"9820370032"},{"name":"PRAVIN CHANDULAL SHAH","email":"vinayakpshah@gmail.com","mobile":"9820198341"},{"name":"JYOTINDRA KANTILAL PANDYA","email":"jyotindra1946@gmail.com","mobile":"9769073429"},{"name":"RAVI BALWANTRAI MEHTA - Chetan Sir","email":"ravibm2k@gmail.com","mobile":"9821763763"},{"name":"VICKY HASMUKH VIPANI","email":"vickyvipani1978@gmail.com","mobile":"9820128445"},{"name":"AZIMUULA YUSUF SAYED","email":"aazsyd@gmail.com","mobile":"9920228943"},{"name":"SANJAY VIJAY SHAH","email":NaN,"mobile":NaN},{"name":"ASHOK ANAND MANE","email":NaN,"mobile":"9022147687"},{"name":"NAVNEET GULABCHAND DAVE","email":"dnavneet56@gmail.com","mobile":"9869150986"},{"name":"AKILABEN N ANTELAWALA","email":"akku.mommy@gmail.com","mobile":"9821599582"},{"name":"PREETI HASMUKH GOSALIA","email":NaN,"mobile":"9820567044"},{"name":"AKANSHA CHAWLA","email":NaN,"mobile":NaN},{"name":"JAY RAJNIKANT MAZUMDAR","email":"mazumdar_jay@yahoo.com","mobile":"9821086674"},{"name":"ZAFRULLA YUSUF SAYED","email":"zafsy123@gmail.com","mobile":"9892699899"},{"name":"SWEETA BHAVESH SHAH - Chetan Sir","email":"bhaveshshah2303@gmail.com","mobile":"9820615108"},{"name":"ANTHONY AUGUSTIN","email":NaN,"mobile":NaN},{"name":"PRAKASH SHAH","email":"prakashshah2710@gmail.com","mobile":"9821471166"},{"name":"PRIYANCA BHANSALI","email":NaN,"mobile":NaN},{"name":"CHETAN HIMATLAL KOTAK","email":NaN,"mobile":NaN},{"name":"DIMPLE LOPEZ","email":NaN,"mobile":NaN},{"name":"BHANUDAS BENDALE","email":NaN,"mobile":NaN},{"name":"DHARMESH VAJU DHOLAKIA","email":NaN,"mobile":NaN},{"name":"KAMLESH RAMESH PANCHAL","email":NaN,"mobile":"9004322277"},{"name":"NIRAV DINESH SHAH","email":NaN,"mobile":NaN},{"name":"SAROJ SHAH","email":NaN,"mobile":NaN},{"name":"RUSHABH SHAH - Chetan Sir","email":NaN,"mobile":NaN},{"name":"PALLAVI MEHTA","email":NaN,"mobile":NaN},{"name":"SANJAY RANCHODBHAI PRAJAPATI","email":NaN,"mobile":NaN},{"name":"NAVIN CHHOTALAL SHETH","email":"pramitseth@yahoo.co.in","mobile":"9820453672"},{"name":"KETAN SHAH","email":NaN,"mobile":NaN},{"name":"BHARAT RAJU GAIKWAD","email":NaN,"mobile":"8898791894"},{"name":"SACHIN C BOBHATE","email":NaN,"mobile":"9321110456"},{"name":"PIYUSH HASMUKH SHAH","email":"pshah6835@gmail.com","mobile":"9820023821"},{"name":"PIYUSH VASANTARI SHAH","email":NaN,"mobile":NaN},{"name":"JITEN MULRAJ SHAH","email":"j10shah@gmail.com","mobile":"9867700051"},{"name":"JAYEN NAVIN SHAH","email":"jayanvidhi@gmail.com","mobile":"9920294859"},{"name":"DEVESH MAGANLAL SANGHVI","email":NaN,"mobile":NaN},{"name":"NEHAL JAYANTIBHAI SHAH","email":"parekhhetu@gmailcom","mobile":"9619189893"},{"name":"NAVIN KAMALSINGH BHUTORIA","email":"mkbhutoria@gmail.com","mobile":"9819284888"},{"name":"NIRUBEN KANUBHAI KANADIA","email":NaN,"mobile":NaN},{"name":"ASHIT BHARAT VASA","email":"p.v.plastics@gmail.com","mobile":"9821006006"},{"name":"SUSHANT KUMAR SINGH","email":"ss090372@gmail.com","mobile":"9820042174"},{"name":"RAJESH MEHTA","email":NaN,"mobile":NaN},{"name":"NILESH AMRITLAL MEHTA","email":"namehta2014@gmail.com","mobile":"8451992951"},{"name":"HIMANSHU JASWANT SHAH","email":"himu_shah@yahoo.co.in","mobile":"9869267008"},{"name":"OJAS INDRAVADHAN THAR","email":"ojasthar@gmail.com","mobile":"9892222333"},{"name":"MEHUL VIJAY VORA","email":"mehul_vora76@hotmail.com","mobile":"9820954517"},{"name":"RAMESH GHANSHYAM DEORA","email":"deora73@yahoo.com","mobile":"9925006330"},{"name":"MANEESH GHANSHYAM MISHRA","email":"maneesh.ce.2007@gmail.com","mobile":"9967847690"},{"name":"DINESHKUMAR MANGILAL DAVE","email":"dineshdave.pandit@hotmail.com","mobile":"9321294746"},{"name":"RASESH HEMANT SHAH","email":"rasesh786@gmail.com","mobile":"9892111177"},{"name":"SANDIP RAMESH MEHTA","email":"sandeep@fortunelighting.in","mobile":"9819881351"},{"name":"YOGESH SHANTILAL GORADIA","email":NaN,"mobile":"9320521255"},{"name":"TUSHAR NARESH SHAH","email":NaN,"mobile":"9820136243"},{"name":"PANKIT ROHIT SHAH","email":"pankitshah0184@gmail.com","mobile":"9819867035"},{"name":"REGINALD S BAPTISTA","email":"reginaldbaptista1963@gmail.com","mobile":"9702405529"},{"name":"ASHA ANILKUMAR ARORA","email":"anilsarora@yahoo.com","mobile":"9833302442"},{"name":"PARAMESHWARAN VENKATRAMAN","email":"pooradummona@gmail.com","mobile":"9820314886"},{"name":"PARAG MAHENDRA DOSHI","email":"parag_mtc@yahoo.com","mobile":"9869387033"},{"name":"RAHUL PRAVIN DEDHIA","email":"rahul.dedhia@yahoo.com","mobile":"9820000051"},{"name":"NARASIMH SUBRAMANIAM","email":"subu1306@gmail.com","mobile":"9867110550"},{"name":"VIRAF DINSHAW TENGRA","email":"viraf.tengra@yahoo.com","mobile":"9867396448"},{"name":"JEEVAN VISHWANATH AMIN","email":"mrjeevanamin@gmail.com","mobile":"9820709044"},{"name":"NIRMALA DSOUZA","email":"nirmaladsouza289@gmail.com","mobile":"8286105996"},{"name":"PARESH VRAJLAL DOSHI","email":"doshisuchit123@gmail.com","mobile":"9869666010"},{"name":"SUCHIT PARESH DOSHI","email":"doshisuchit123@gmail.com","mobile":"9869666010"},{"name":"DHIRAM MUKESH KOTADIA","email":"dhiram.kotadia@gmail.com","mobile":"9833916985"},{"name":"AKSHAY BHANUSHANKAR PANDYA","email":"gallerysachi@gmail.com","mobile":"9820019962"},{"name":"DUSHYANT BHARAT MEHTA","email":"vdpm07@gmail.com","mobile":"9820066360"},{"name":"DIPALI SHAILESH DHORDA","email":"dipalidhorda@yahoo.com","mobile":"9819517567"},{"name":"MAHESH SHANTILAL VORA","email":"maheshenterprise896@yahoo.com","mobile":"9821172303"},{"name":"VIJAY PATNE","email":"sujatipatne14@gmail.com","mobile":NaN},{"name":"SAMIR HEMANDRA SHETH","email":"skenterprise_1998@yahoo.com","mobile":"9824038547"},{"name":"RAJESHKUMAR PATEL","email":"patelrajesh836@gmail.com","mobile":"9869153450"},{"name":"SAMIR SHAH","email":NaN,"mobile":"9322354322"},{"name":"BHAVESH SURESH MEWADA","email":"bhavesh@knsarchitects.com","mobile":"9819850579"},{"name":"PRAKASH GUNVANTLAL SHAH - Chetan Sir","email":"omplastic@hotmail.com","mobile":"9820113004"},{"name":"EKTA CHIRAG SHAH","email":"ekta.c.shah@gmail.com","mobile":"7738389544"},{"name":"CHIRAG SHAH","email":"kavishchirag@gmail.com","mobile":"9892647222"},{"name":"MAHESH DHARMESHBHAI DOBARIYA","email":"dmahesh1412@gmail.com","mobile":"9833325696"},{"name":"KALPESH PANDYA","email":"ompandya@gmail.com","mobile":"9004762010"},{"name":"SAMIR NARENDRA SHAH","email":"truewaycorporation@hotm","mobile":"9320090353"},{"name":"YATIN KANTIDAS PASTA","email":"p.chem@hotmail.com","mobile":"9821116481"},{"name":"YOGESH CHHOTALAL MANIAR","email":"pam_corporation@hotmail.com","mobile":"9821116483"},{"name":"FARRUKH AHMAD KHAN","email":"fgckhan222@gmail.com","mobile":"9820799204"},{"name":"DILIP SHANTILAL CHITALIA","email":"dilipchitalia@gmail.com","mobile":"9920051199"},{"name":"SHAILESH DILIP JOSHI","email":"shailesh_j54@outlook.com","mobile":"9892320890"},{"name":"DHIREN CHAMPAKLAL MEHTA","email":"17bhavinmehta@gmail.com","mobile":"9820076170"},{"name":"DHARMENDRA ACHARATLAL PAREKH","email":"dharmendraparekh24@gmail.com","mobile":NaN},{"name":"SOURABH KUMAR YADAV","email":"sourabhyadav@gmail.com","mobile":"9619957808"},{"name":"ASHISH DINESH DHOLAKIA","email":"aashish1808@gmail.com","mobile":"9324241140"},{"name":"VIKRAM SUMATICHANDRA SHETH","email":NaN,"mobile":"9821341057"},{"name":"ASIT PARESH DESAI","email":"asitdesai11@hotmail.com","mobile":"9967911600"},{"name":"GITEN SUMATILAL SHETH","email":"gitensheth@yahoo.in","mobile":"9820075853"},{"name":"PRASHANT HARKISHAN VORA","email":"prashantvora@datapoint.net.in","mobile":"9820194434"},{"name":"MITUL PREMJI SATRA","email":"bizzarefashion@gmail.com","mobile":"7021391715"},{"name":"RAJIV HARKISHAN VORA","email":"vorarajiv70@gmail.com","mobile":"9820453565"},{"name":"CHIRAG HASMUKH ZATAKIA","email":"zchirag@hotmail.com","mobile":"9820157055"},{"name":"NISARG MAHENDRA MEHTA","email":"captainnisarg@yahoo.com","mobile":"9820446169"},{"name":"HARDIK HASMUKH ADIYAL","email":"parthadiyal1991@gmail.com","mobile":"9619334557"},{"name":"ASHISH CHANDRAVADAN MEHTA - Chetan sir","email":"alfaopto@gmail.com","mobile":"9029232301"},{"name":"BHARAT JAKHU PATEL","email":NaN,"mobile":"93249 55890"},{"name":"PRITESH HARILAL PATEL","email":"priteshlalu1978@gmail.com","mobile":"9821123696"},{"name":"DHARMENDRA HARISH SINGH","email":"dharmi2584@gmail.com","mobile":"9619944303"},{"name":"SAHIL NANDLAL KARWA","email":"sahil.karwa88@gmail.com","mobile":"7700951888"},{"name":"UDAY GUNVANTLAL KANSARA","email":"udaykansara001@gmail.com","mobile":"9860710972"},{"name":"PRADEEP NARAYAN JADHAV","email":"pradeep37@gmail.com","mobile":"9820679759"},{"name":"RENU VIVEK SHAH - Chetan Sir","email":"shahviv@gmail.com","mobile":"9819317799"},{"name":"HARDIK MAHESH SHAH","email":"hardik3019@gmail.com","mobile":"9819457200"},{"name":"ABHISHEK MAHESH DESAI","email":NaN,"mobile":NaN},{"name":"SANJAY JAGDISH MEHTA","email":"sjmstock@yahoo.co.in","mobile":"9820597598"},{"name":"MIRAJ VIRCHAND DODHIA","email":"mirajdodhia04@gmail.com","mobile":"9145160767"},{"name":"AMARJEET KAILU SAHANI","email":NaN,"mobile":"8879578525"},{"name":"MAHESH CHAMPAKLAL MEHTA","email":"mehtajeet13@gmail.com","mobile":"9892070769"},{"name":"NAVINCHANDRA PURSHOTTAMDAS MEHTA","email":"shahpulin54@yahoo.in","mobile":"9324908547"},{"name":"SHARAD SHANTILAL CHITALIA","email":NaN,"mobile":NaN},{"name":"MADHUKAR MAGANLAL SHAH","email":"madhushah003@gmail.com","mobile":"9821476224"},{"name":"MAHESH PREMCHAND LAHARANI","email":"mbth2010@gmail.com","mobile":"9821035995"},{"name":"ABHILASH MAHESH SORAL","email":"abhilashsoral@yahoo.com","mobile":"9820087551"},{"name":"ALPESH PRAVIN SIROYA","email":"alpeshsiroya@gmail.com","mobile":"9867373030"},{"name":"KARTIK JAYSI BHATIA","email":"kartikjbhatia@hotmail.com","mobile":"9769141345"},{"name":"GAURAV SUNIL PARIKH","email":"gauravparikh413@gmail.com","mobile":"9669449443"},{"name":"ASHOKKUMAR ANANTRAY MEHTA","email":NaN,"mobile":NaN},{"name":"RUPALI GIRISH MODI","email":"rm10legal@gmail.com","mobile":"9820480812"},{"name":"DHARMENDRA PARAS GUPTA","email":"rubigupta546@gmail.com","mobile":"9702161948"},{"name":"RUPAL RAJESH GANDHI (MIT DEEPAK PAREKH CHAIWALA)","email":NaN,"mobile":NaN},{"name":"HEMANT HARISHCHANDRA GAWDE (SAGAR SHAH)","email":"gawdehemant1@gmail.com","mobile":"9833693242"},{"name":"RASIK HIRJI GALA","email":"kirti_nagda@yahoo.com","mobile":"9769722210"},{"name":"ROYSTON RUDOLPH GOURIA","email":"ROYSTONGOURIA1997@GMAIL.COM","mobile":"9137169620"},{"name":"PREMAL KALPESH GANDHI","email":NaN,"mobile":NaN},{"name":"VISHAL GUPTA","email":"VISHALGPT9870@GMAIL.COM","mobile":"8108559445"},{"name":"DHANANJAY DHONDIRAM GAWAS","email":"gawasdhananjay586@gmail.com","mobile":"8097470271"},{"name":"RUSHIKESH RAMESH GURAV (REF KIRTI NAGDA)","email":"guravrushikesh110@gmail.com","mobile":"9850778016"},{"name":"RAJESH DHONDU GHADASHI","email":"RAJESHGHADSHI33@GMAIL.COM","mobile":"9224721633"},{"name":"SANDEEP NAVIN GANDHI (RCMA MEMBER)","email":"sundeepinternationall@gmail","mobile":"9820460630"},{"name":"MANAN NILESH GOGRI","email":"gogrimanan@gmail.com","mobile":"9224330606"},{"name":"MAHENDRA AMRITLAL GANDHI","email":"mahendra@indiayellowpages.","mobile":"9322211314"},{"name":"HIREN DEVSHI GALA","email":"tithi1980@gmail.com","mobile":"9167715052"},{"name":"POONAM MANOJBHAI GADHIYA (REF SAGAR SHAH)","email":"poonaminv@gmail.com","mobile":"7977645378"},{"name":"HARISH RAME GOWDA","email":"gowdamani716@gmail.com","mobile":"9867105166"},{"name":"HIRAL JAYNIK SHAH","email":"anokhishah93@gmail.com","mobile":"9819270271"},{"name":"RAJESH MOHANLAL HARIA","email":"rajeshharia24@gmail.com","mobile":"9867763678"},{"name":"SACHIN LIMBAJI HAZARE (VIKAS GUPTA STAFF)","email":"sachinhajare122@gmail.com","mobile":"9765186919"},{"name":"MAHENDRA BALASAHEB INDALKAR","email":"mahendra.indalkar12@gmail.com","mobile":"8082648883"},{"name":"MILIND M INDULKAR","email":"jyotim76@gmail.com","mobile":"9322131260"},{"name":"KAMAL JYOTINDRA JOSHI","email":"kamal.joshi20@gmail.com","mobile":"9739976547"},{"name":"BIPINCHANDRA S JOGANI","email":"virag_jogani21@yahoo.com","mobile":"9375122880"},{"name":"BINA JATIN JOSHI","email":"0972JATIN@GMAIL.COM","mobile":"9820723308"},{"name":"NEHA MANOHAR JABARE (VIKAS GUPTA STAFF)","email":"jabareneha13@gmail.com","mobile":"7900040922"},{"name":"RAHUL KUMAR JHA (VIKAS GUPTA STAFF)","email":"rahulkumarjha172@gmail.com","mobile":"7977414453"},{"name":"SANTLAL K JAISWAL (VAIBHAV GANDHI STAFF)","email":NaN,"mobile":"9820679798"},{"name":"RASHMI VISHAL JOSHI","email":"vishaljoshi000@gmail.com","mobile":"9821737415"},{"name":"BHUPENDRA LABHSHANKAR JOSHI","email":"aartijoshi906@gmail.com","mobile":"9323915618"},{"name":"KISHANLAL SOHANLAL JAIN","email":NaN,"mobile":NaN},{"name":"JIGNESH KIRIT JATAKIA","email":"jigneshjatakiasay1@gmail.com","mobile":"9619070439"},{"name":"KAUSHIK RAMNIKLAL JOSHI (TEJAS LIMBACHIA REF)","email":"joshidhairya@ymail.com","mobile":"9029093411"},{"name":"AMOL TANAJI JAGDALE","email":"amoljagdale1@gmail.com","mobile":"9870123702"},{"name":"SHAILESH SAGUNLAL JALUNDHWALA (REF SAMEER SHETH)","email":"prishienterprises@gmail.com","mobile":"9820319628"},{"name":"VEDIKA SURAJ JUMANI (SUHAIL SIDDIQUE STAFF)","email":NaN,"mobile":NaN},{"name":"RAJU KUNDANDAS JETHWANI - Chetan Sir","email":NaN,"mobile":"9821523413"},{"name":"PARAS YOGEN JOSHI(BHAVISHA REFERENCE)","email":"parasjoshi029@gmail.com","mobile":"9221177117"},{"name":"PRATIK ANIL JOSHI","email":"pratikjoshi7016@gmail.com","mobile":"9104006271"},{"name":"KEYUR RASHMIKANT JHAVERI","email":"keyur.jhaveri77@gmail.com","mobile":"9867194555"},{"name":"NAYAN VINOD KATRODIA - Chetan Sir","email":"nayankatrodia@gmail.com","mobile":"9892209019"},{"name":"PARESH ANIL KHANDHAR","email":"paresh.khandharpk@gmail.com","mobile":"9323110580"},{"name":"ANURAG MOHAN KASKAR (SAGAR SHAH)","email":"andy.chinu1991@gmail.com","mobile":"8898687879"},{"name":"VIRAL HASMUKH KUVADIA","email":"ishaankuvadia13@gmail.com","mobile":"9867230737"},{"name":"CHARUL PARTH KORADIYA","email":"parth.koradiya@gmail.com","mobile":"9427950332"},{"name":"SOHEL GULFARAZ KHAN","email":"crsohelkhan@gmail.com","mobile":"8652365565"},{"name":"KETAN MANSHUKHLAL KOTHARI","email":"kothari20@gmail.com","mobile":"99699212356"},{"name":"MITESH MANUBHAI KOTHARI","email":"REF- PRANAV PRAKASH FATHER IN LAW","mobile":"9998260636"},{"name":"ALBERT KALLATI","email":"accounting@kallati.com","mobile":NaN},{"name":"CHETAN CHANDRAKANT KULE","email":"ckule02@gmail.com","mobile":"7977348273"},{"name":"NILESH MAHENDRA KUVADIA (MAYUR DHRUVA)","email":NaN,"mobile":"9825041100"},{"name":"SANDIP SAMBHAJI KADAM","email":"sandeep12584@gmail.com","mobile":"9819664190"},{"name":"ALOK P KHETANI (VIKI VIPANI)","email":"khetanialok@gmail.com","mobile":"9137228233"},{"name":"DEEPAK RAMCHANDRA KADAM","email":NaN,"mobile":NaN},{"name":"LAXMINARAYAN BABULAL SHARMA","email":"laxman1_sharma@yahoo.co.in","mobile":"9930243314"},{"name":"HEMAL RAVICHANDRA LODARIA","email":NaN,"mobile":"8850913682"},{"name":"NAYNA HARSHAD LIMBACHIA (TEJAS LIMBACHIYA)","email":"HARDIK.LIMBACHIYA19@GMAIL.COM","mobile":"9820189429"},{"name":"EKTA ASHOKNATH LAROIYA","email":"ektalaroiya@yahoo.com","mobile":"9920282412"},{"name":"HARDIK MAHENDRA LIMBACHIYA","email":"HARDIK.LIMBACHIYA19@GMAIL.COM","mobile":"9820189429"},{"name":"ABHAY PARESH LAD","email":"ladabhay812@gmail.com","mobile":"9930956592"},{"name":"FRANCIS LOBO","email":"helenlobo21273@gmail.com","mobile":"7506412507"},{"name":"SUVARNA DINESH LAVHANDE","email":"nilya1604@gmail.com","mobile":"9820309621"},{"name":"JIGNESH H MEHTA","email":"mehtabuttons@gmail.com","mobile":"9324918980"},{"name":"HIMANSHU MAVANI","email":"hjmavani@gmail.com","mobile":"9892003110"},{"name":"JAYESH J MODI","email":"mody.tirth@gmail.com","mobile":"9619448663"},{"name":"TEJAS (MAHAVIR STORE)","email":NaN,"mobile":"9820540487"},{"name":"SAMEER TANAJI MORE","email":"sameermore105@gmail.com","mobile":"9664894998"},{"name":"CHIRAYU VIPUL MEHTA","email":"chirayum1@gmail.com","mobile":"9833427162"},{"name":"SACHIN VINOD MISHRA","email":"sachin1508@gmail.com","mobile":"9920113975"},{"name":"NAYANA RAJESH MEKHIA","email":"POONAM.MEKHIA@GMAIL.COM","mobile":"9867725354"},{"name":"SUVIDHA VILAS MOHITE","email":"mohitesuvidha@gmail.com","mobile":"9664681282"},{"name":"SARINA EDWARD MISQUITTA","email":"SARINA.MISQ95@GMAIL.COM","mobile":"8898133582"},{"name":"BIPIN CHAMPAKLAL MEHTA","email":"4bipinmehta@gmail.com","mobile":"9321034814"},{"name":"JITENDRAKUMAR KANTILAL MEHTA","email":"jitu@isdg-inc.com","mobile":"8187238813"},{"name":"DEEPALI ANAND MEHTA","email":"harkantm@gmail.com","mobile":"9821037469"},{"name":"GANESH SHIVBIHARI MISHRA","email":"GANESHMISHRAPETRO@GMAIL.COM","mobile":"8850654434"},{"name":"SONAL SUNIL MAULE","email":"SUNIL.MAULE@GMAIL.COM","mobile":"9223424601"},{"name":"RAMA CHANDRA MYNAMPATI","email":"msnpadvocate@gmail.com","mobile":"9848046744"},{"name":"TORAL PRAMIT MEHTA","email":"pramitmehta1961@gmail.com","mobile":"9167905942"},{"name":"VIJAY RAMJIBHAI MAKWANA","email":"vijaymakwana22084@gmail.com","mobile":"9833164246"},{"name":"SAUMIL DIVYESH MEHTA","email":"THELIMUAS@GMAIL.COM","mobile":"9769622644"},{"name":"NITIN HARILAL MEHTA","email":"arjunmehta@gmail.com","mobile":"9004003312"},{"name":"RAMESH MANHAR LAL MODI","email":"rameshmodi009@gmail.com","mobile":"8356011741"},{"name":"PRAFUL KANTILAL MEWADA","email":"PRAFULMEWADA92@GMAIL.COM","mobile":"9773344805"},{"name":"AKSHAY HANUMANT MANE","email":"akshaymane928@gmail.com","mobile":"8082501344"},{"name":"MIRZA FAIZ MOHSIN","email":"faizmirza8698@gmail.com","mobile":"7972642809"},{"name":"VIJAYA PARESH MEHTA (VIJAY CHEMICAL)","email":NaN,"mobile":"9004969109"},{"name":"SANJAY MERCHANT","email":"sanjay.marchant@gmail.com","mobile":"9324287090"},{"name":"SIDDHESH PANDURANG MORE","email":"MORESIDDHESH116@GMAIL.COM","mobile":"8850337207"},{"name":"SHRIJI PANKAJ MANIAR","email":"shrijimaniar@gmail.com","mobile":"9821687833"},{"name":"MAHESH HARSHAD MEHTA (ref nayan v mehta)","email":"mahesh.vikasindustries@gmail.com","mobile":"9324112518"},{"name":"MAHESH HARSHAD MEHTA (ref nayan v mehta)","email":"mahesh.vikasindustries@gmail.com","mobile":"9324112518"},{"name":"MAHESH HARSHAD MEHTA (ref nayan v mehta)","email":"mahesh.vikasindustries@gmail.com","mobile":"9324112518"},{"name":"VISHAL PRAVIN MANIAR (SACHIN DINESH VORA)","email":"maniarvishal@hotmail.com","mobile":"7738554807"},{"name":"JAWAHAR CHIMANLAL MEHTA (REF SAMEER SHETH)","email":"jawaharcmehta@gmail.com","mobile":"9820081765"},{"name":"RAJESH SHANTILAL MIRANI (REF SAMEER SHETH)","email":"rajeshsmirani@gmail.com","mobile":"9820076443"},{"name":"RUPAL MEHTA","email":NaN,"mobile":NaN},{"name":"CHITRA MAHADEVAN","email":"chitramaadu@gmail.com","mobile":"9342313922"},{"name":"JAYESH MOHANLAL MEHTA","email":NaN,"mobile":NaN},{"name":"SAHIL NITIN MORE","email":"moresahil523@gmail.com","mobile":"8010189920"},{"name":"ALPESH SHASHIKANT MEHTA","email":NaN,"mobile":"8097391562"},{"name":"SWARUP SANJAY MANTRI (REF ABHISHEK DUKANE)","email":NaN,"mobile":NaN},{"name":"SEEMA MILAN MEHTA","email":"mehtasima@ymail.com","mobile":"9821779446"},{"name":"VISHAL ASHOK MERVANA","email":"vmervana@hotmail.com","mobile":"9833689178"},{"name":"NITIN ISHWARLAL MEHTA (REF TEJAS HASMUKH SHAH)","email":NaN,"mobile":NaN},{"name":"JIGNESH MEHTA (REF NEEMESH A SHAH)","email":"kmehtaindia@gmail.com","mobile":"9867275176"},{"name":"ARJUN TUKARAM MOHITE (REF AKSHAY MANE)","email":"arjunmohite14@gmail.com","mobile":NaN},{"name":"ASHISH MAHENDRA MHABDI","email":"ashishmhabdi@hotmail.com","mobile":"8080010897"},{"name":"NIRAV DHARNENDRA SHAH","email":"niravsh09@gmail.com","mobile":"9867375752"},{"name":"PRABHAKAR NALLA (VIKAS GUPTA STAFF)","email":"prabhakarnalla5@gmail.com","mobile":"9022683743"},{"name":"GIRISH NARSINGH NAYAK","email":"nayakgi175@gmail.com","mobile":"9769411138"},{"name":"NANDAN SATISH NAMBIAR","email":"nandansnambiar@gmail.com","mobile":"9819350415"},{"name":"GIRISH N NAGAPPA","email":"4enquiryinbox@gmail.com","mobile":"9739323257"},{"name":"ANANT SADASHIVRAO NIKAM","email":"anantnikam30@yahoo.com","mobile":"9820512352"},{"name":"RAKESH KUMAR NAI ( REF APURVA JUHUKAR)","email":"bhatiarakesh271@gmail.com","mobile":"9082865961"},{"name":"LATA JITENDRA NANDOLA","email":NaN,"mobile":NaN},{"name":"RAJU PRAKASH OHAL (REF QCI)","email":NaN,"mobile":NaN},{"name":"PRIYANK VIPUL GANDHI","email":"priyankgandhi1989@gmail.com","mobile":"9833045843"},{"name":"PIYUSH CHHOTALAL PALA","email":"piyushpala460@gmail.com","mobile":"9869471176"},{"name":"PRASHANT PRAVIN PIPALIA","email":"prashant_pipalia@yahoo.com","mobile":"9820086232"},{"name":"DEEPAK JAYANTILAL PAREKH - Chetan Sir","email":"prideteacorp@yahoo.com","mobile":"9869071781"},{"name":"FALGUNI SATISH PAREKH","email":"rsfs2006@gmail.com","mobile":"9820440803"},{"name":"BHARTI RAJNIKANT PANCHAL","email":"rudreshpanchal09@gmail.com","mobile":"9167310608"},{"name":"MIT BHARGAV PATEL (APURVA REF)","email":"MPMYSELF4@GMAIL.COM","mobile":"9833492912"},{"name":"MANJI GANESHA PATEL","email":NaN,"mobile":"9833204694"},{"name":"KAUSHIKKUMAR S PUROHIT","email":"kaushikpurohit3568@gmail.com","mobile":NaN},{"name":"MEHUL NAVINCHANDRA PATEL","email":"daminimehul@gmail.com","mobile":"9869473810"},{"name":"ALPESH SURESH PARMAR","email":"alpeshparmar68361@gmail.com","mobile":"9769503853"},{"name":"NIRAJ DURGAPRASAD PANDEY","email":"nirajhph@yahoo.co.in","mobile":"7498522444"},{"name":"PRADIP TAPIDAS PAREKH","email":"ptparekh57@gmail.com","mobile":NaN},{"name":"MANISHA NATVARLAL PARMAR","email":"manishaparmar@gmail.com","mobile":"9820125599"},{"name":"MAITHILI SUSHIL PHATAK","email":"maithiliphatak70@gmail.com","mobile":"9167119769"},{"name":"JYOTI LALCHAND PAL","email":"rubypal535@gmail.com","mobile":"9321836414"},{"name":"SUNITA PARSHURAM PATIL","email":"SUNITAPATIL9082@GMAIL.COM","mobile":"9082983930"},{"name":"SULBHA ANIL PANDE","email":"spande1708@yahoo.com","mobile":"9821098568"},{"name":"BHAVIN NATVARLAL PARMAR","email":"bhavin21parmar@gmail.com","mobile":"9930959814"},{"name":"JASWANT SHIVLAL PATEL (HARDIK ADIYAL'S INLAWS)","email":NaN,"mobile":"9819471789"},{"name":"TANVI SHAILESH PADYAR","email":"tanvi101012@gmail.com","mobile":"9604548757"},{"name":"MAHENDRA DADASAHEB PAWAR","email":"mahendrapawar1678@gmail.com","mobile":"8850077643"},{"name":"MONIKA KARL PATEL","email":"monikapatel0211@gmail.com","mobile":"9821794415"},{"name":"AMIT KANTILAL PARMAR","email":"amitparmar23@gmail.com","mobile":NaN},{"name":"SWATI AMIT PAREKH","email":"swati@elegan.net","mobile":"9833860027"},{"name":"JYOTI ASHOK PASHTE","email":"jyotipashte1998@gmail.com","mobile":"7738586449"},{"name":"HEENAL PARMAR","email":"parmarheenal0@gmail.com","mobile":"9920016748"},{"name":"AMUL JAGJIVANDAS PAREKH (REF SAMEER SHETH)","email":"parekhamul3756@gmail.com","mobile":"9821030462"},{"name":"KAREENA NARESH PATIL","email":"KAREENAPATIL19@GMAIL.COM","mobile":"7506071589"},{"name":"JOHN KILLIAN PEREIRA","email":"john_pereira@rediffmail.com","mobile":"9867369964"},{"name":"JAYESH JAGAT PAREKH","email":"belaparekh678@gmail.com","mobile":"9867240777"},{"name":"SAKSHI VINOD PANCHAMIA","email":"spanchamia2000@gmail.com","mobile":"9004051292"},{"name":"SHREY SANJAY PATEL (REFF - SHUBHAM SHAH)","email":"Shrey5591@gmail.com","mobile":"9920548075"},{"name":"ROHITKUMAR PANCHAURI (REF VIMAL LAKHANI)","email":"financethepeace@gmail.com","mobile":"7869557522"},{"name":"MUKESH LAXMAN PATEL","email":"jetage.industries1998@gmail.com","mobile":"9930549461"},{"name":"JAGDISH MANNULAL PARDESHI","email":"jetage.industries1998@gmail.com","mobile":"9930549461"},{"name":"SHAILESH DEVJI PARMAR","email":"VARUN.PARMAR97@gmail.com","mobile":"8879723440"},{"name":"VISHAL SHASHIKANT RIJIA","email":"VISHALRIJIA@HOTMAIL.COM","mobile":"9833454600"},{"name":"SANTOSH BALU RAUT","email":"sr6098555@gmail.com","mobile":"9821721234"},{"name":"RAMZAN ABDUL RAZAK","email":"ramzan00704@gmail.com","mobile":"9820729786"},{"name":"MOHHMAD NADEEM ASLAM RAZA","email":"nadeem00259@gmail.com","mobile":"8898829631"},{"name":"NATVARLAL RANA","email":"rajulr@hotmail.com","mobile":"9867425978"},{"name":"KAMLESH LILARAM RANGNANI","email":"kamalrangnani34@gmail.com","mobile":"9925003570"},{"name":"SAKSHI SRIVASTAVA","email":"ssakshis@gmail.com","mobile":"9986726477"},{"name":"DARSHAN NARESH SHETH","email":"chintanenterprises@rediffmail.com","mobile":"9833876434"},{"name":"SANJAY SANSKARAN JAIN - Chetan Sir","email":"electro927@hotmail.com","mobile":"9323204999"},{"name":"GAURAV AJIT SHIRWAIKAR - Chetan Sir","email":"shirwaikarg@gmail.com","mobile":"9619771247"},{"name":"BINDESH B SEJPAL","email":"yamunatextile@sify.com","mobile":"9819357340"},{"name":"SUKETU PRABODH SHAH","email":"spshah@maninfra.com","mobile":"9867577104"},{"name":"HEMAL DANESH SHAH","email":"nssshah1782@gmail.com","mobile":"9820228292"},{"name":"VIRENDRA HIMATLAL SHAH","email":"virushah.veer@gmail.com","mobile":"9223432296"},{"name":"VIREN DHIRAJLAL MEHTA","email":"virenmehta36@gmail.com","mobile":"9867911100"},{"name":"MINESH MULCHAND SHAH - chetan sir ","email":"info@probitas.in","mobile":"9820024612"},{"name":"CHINTAN VIRAL SANGHVI","email":"chintansanghvi87@gmail.com","mobile":"7710029772"},{"name":"SAMEER HEMENDRA SHETH (REF AKSHAY PANDYA)","email":"sameer.sheth705@gmail.com","mobile":"9324456895"},{"name":"RAJESH CHANDRAKANT SANGHVI","email":"rajusanghvi@hotmail.com","mobile":"9820281142"},{"name":"HEMAL PRAVINCHANDRA SHAH","email":"mansi_pharma@rediffmail.com","mobile":"9426010629"},{"name":"SUNIL SHAH","email":"JIGISHA2703@GMAIL.COM","mobile":"9321234526"},{"name":"SHRIKANT M SHAH","email":"shah_nikunj@yahoo.com","mobile":"9967301943"},{"name":"JITENDRA KANTILAL SHAH","email":"hits786@hotmail.com","mobile":"9082692150"},{"name":"SALONI DEEPAK SHETH","email":"saloni08@gmail.com","mobile":"9867251660"},{"name":"SURENDRA SHIVA SAWANT","email":"SURENDRA1701@GMAIL.COM","mobile":"9967224889"},{"name":"MIRAL SHAH (MAHESHWAR M)","email":NaN,"mobile":NaN},{"name":"DARSHAN DILIP SHAH","email":"darsu.1983@gmail.com","mobile":"9892243858"},{"name":"DEVEN NIRMAL SHETH","email":"abhaykdesai@gmail.com","mobile":"9892508899"},{"name":"KUNAL YADHAVA SHETTIGAR (SAGAR SHAH)","email":"shettigarkunal@gmail.com","mobile":"9768990462"},{"name":"RAMESHWAR MOHAN SAW","email":"rameshwarsaw1971@gmail.com","mobile":"9773996480"},{"name":"AMEY JAYWANT SAWANT","email":"amey300063@gmail.com","mobile":"9773416636"},{"name":"ANIL BALKRISHNA SHAH","email":"anilbshah@gmail.com","mobile":"9930999365"},{"name":"BHAVIKA DARSHAN SHAH","email":"bhavika.h.parekh@gmail.com","mobile":"7710050786"},{"name":"SHUBHAM KALPESH SHAH ( REF ANOKHI SHAH)","email":"shubhamshah2526@gmail.com","mobile":"9619516050"},{"name":"UMA PANKAJ SANGHVI","email":"sanghvi1@hotmail.com","mobile":"9619856612"},{"name":"HASU NARENDRA SHAH","email":"shethnk@yahoo.co.in","mobile":"9867467004"},{"name":"INDERPAL SINGH","email":"inderpal1976@yahoo.com","mobile":"9825226593"},{"name":"KISHORI NILESH SHAH","email":"nilesh@vrushti.in","mobile":"9821097753"},{"name":"ROSHNI SURESHCHAND SHUKLA","email":"ROSHNISHUKLA1797@GMAIL.COM","mobile":"7666921995"},{"name":"RUPAL NARENDRA SHAH","email":"shahnrupal@yahoo.com","mobile":"9930948309"},{"name":"MANOJ SADASHIV SAUDAGER","email":"manojsaudagar6@gmail.com","mobile":"8082115317"},{"name":"AKHTAR KABIR SHAIKH (VIKAS GUPTA STAFF)","email":"akhtarkabirshaikh786@gmail.com","mobile":"9930305234"},{"name":"JAGDISH SOLANKI (VIKAS GUPTA STAFF)","email":"solanki.jagdish94@yahoo.com","mobile":"9773930938"},{"name":"MAQBUL AHMAD IQBAL AHMAD SHAIKH (VIKAS GUPTA STAFF)","email":"makshaikh00@gmail.com","mobile":"8655356267"},{"name":"MAYURI VISHWAS SAKPAL","email":"vishwassakpal456@gmail.com","mobile":"9137857226"},{"name":"KETAN AMRUTLAL SHAH","email":NaN,"mobile":"9029007092"},{"name":"VIKI JASVANTLAL SHAH","email":"vickysheth12@gmail.com","mobile":"9082192704"},{"name":"ANKUR M SHAH (VAIBHAV GANDHI)","email":"ankur@rpshah.net","mobile":"9821459859"},{"name":"JYOTI RAMVRUSH SAHANI","email":"sahanijyoti58@gmail.com","mobile":"9136311329"},{"name":"CHIRAG P SALIAN","email":"ashartr65@gmail.com","mobile":"9820352310"},{"name":"MAHESH JAYANTILAL SHAH","email":NaN,"mobile":"9082939056"},{"name":"ARUNA MAHENDRA SHAH","email":NaN,"mobile":NaN},{"name":"HARSH MILAN SHAH","email":"shah.harsh.milan@gmail.com","mobile":"9930002775"},{"name":"SACHIN SHIVA SAWANT","email":"SWANTSACHIN25@GMAIL.COM","mobile":"9167265554"},{"name":"SHIVLING K SANGWE ( VAIBHAV GANDHI STAFF)","email":"in.generaladditives@gmail.com","mobile":NaN},{"name":"RAHIL YUSUF SHAIKH","email":NaN,"mobile":"9769624882"},{"name":"ASHISH PRAKASH SHIRSATH","email":NaN,"mobile":"8208568198"},{"name":"SULEMAN BHIKUMIYA SHAIKH","email":NaN,"mobile":NaN},{"name":"UMESH SHEWALE (RAVI B MEHTA STAFF)","email":NaN,"mobile":"9167680724"},{"name":"SHIVRAM SHETTY","email":NaN,"mobile":"9822337655"},{"name":"NILESH DILIP SHAH","email":"nilesh@vrushti.in","mobile":"9821097753"},{"name":"CHETAN ABHIMANYU SAWANT (VICKY VIPANI) GHATKOPER KALPATRU","email":"sawantchetan99@gmail.com","mobile":"9819840599"},{"name":"SIDDHARTH P SHAH","email":"omplastic@hotmail.com","mobile":"9820453310"},{"name":"ATUL RAJNIKANT SHAH (JYOTINDRA PANDYA BORIVALI)","email":"atul66@rediffmail.com","mobile":"9820125654"},{"name":"URMIL RAJENDRA SHAH","email":"shahurmil72@gmail.com","mobile":"9323017681"},{"name":"KANAKRAI ANANTRAI SANGHVI","email":"kanak@plastimacindia.com","mobile":"9320211168"},{"name":"KHUSHAL NILESH SANGANI","email":"KHUSHALSANGANI03@GMAIL.COM","mobile":"9930201262"},{"name":"RAMESH DAHYALAL SHAH - Chetan Sir","email":NaN,"mobile":"9821466666"},{"name":"PRATIK NITIN SHAH","email":"pratik.smart21@gmail.com","mobile":"7303344587"},{"name":"NIMISH J SHAH (REF PRANV PRAKASH SHAH )","email":"nshah1612@gmail.com","mobile":"9820547799"},{"name":"AJIJ SIDDIKH SHAIKH (DEEPAK SHETH)","email":NaN,"mobile":NaN},{"name":"RAVINDRA HIMMATLAL SHAH","email":"amitshah830@gmail.com","mobile":"9867509139"},{"name":"ISHANI PARESH SHAH","email":NaN,"mobile":NaN},{"name":"MANLEEN KAUR JAGDIP SETHI","email":"sethisheeba151@gmail.com","mobile":"9322824798"},{"name":"CHETAN KRISHNAKANT SHAH","email":NaN,"mobile":NaN},{"name":"HEMEN SHAH","email":"shahhemen@hotmail.com","mobile":"7977414644"},{"name":"KRUNAL BHARAT SHAH","email":"kuns4u@hotmail.com","mobile":"9769696568"},{"name":"DEEPAK SANGHVI","email":NaN,"mobile":NaN},{"name":"VIVEK SHIVASWAMY","email":"vivshivs@gmail.com","mobile":"9920300700"},{"name":"DEVJI BHACHU SHAH","email":"Rushabh0616@gmail.com","mobile":"9819553880"},{"name":"CHETAN MAHENDRA SHAH","email":"chetanshah@camcs.in","mobile":"9820223402"},{"name":"DILIP J SHAH","email":NaN,"mobile":NaN},{"name":"VIRAL SHIRISH SHAH","email":NaN,"mobile":NaN},{"name":"YATIN HASMUKHRAI SANGHVI","email":"yatin2904@gmail.com","mobile":"9768018787"},{"name":"JINESH SUNIL SHAH","email":"jineshind1980@gmail.com","mobile":"9819147331"},{"name":"MANISH NATWARLAL SHAH","email":NaN,"mobile":"9930993318"},{"name":"RINKU GAURANG SANGHAVI - Chetan sir","email":"rinkimehtaismyname@gmail.com","mobile":"9892352250"},{"name":"CHAITYA KIRTI SHAH","email":NaN,"mobile":"9833917374"},{"name":"HEMANT KANTILAL SHAH","email":"hkshah18@gmail.com","mobile":"9820048367"},{"name":"PRANAY SUMATILAL SHAH","email":"shahpranays@gmail.com","mobile":"9821014229"},{"name":"GAURAV SINGH","email":"gaurav.vfx@gmail.com","mobile":"9920108280"},{"name":"ASHISH RAKESH SINGH (REF VIKAS GUPTA STAFF)","email":"ashishkuwarsingh@gmail.com","mobile":"9892535951"},{"name":"AMIT SANGHAVI","email":NaN,"mobile":NaN},{"name":"SUDHIR SURI (AVDHUT DHAGE)","email":"sudhirsuri@live.in","mobile":"8454845444"},{"name":"CHIRAG SHAH (REF TWEAK TEA MULUND)","email":NaN,"mobile":NaN},{"name":"RAJESH SUMAN SHAH","email":NaN,"mobile":"9323814417"},{"name":"CHIRAG KARSAN SAVLA","email":NaN,"mobile":"9819145111"},{"name":"JIGNESH SUMANBHAI SHAH","email":"jigshah71@gmail.com","mobile":"9323814588"},{"name":"PRABHU ANANDJI SOLANKI (GARDEN GROUP)","email":"prabhusolanki@gmail.com","mobile":"9821717134"},{"name":"JINESH KANTIBHAI SANGHAVI (REF )","email":"jinesh@paintindia.net.in","mobile":"8104353385"},{"name":"DEEPAK RAMANLAL SHAH","email":"birenshah98@gmail.com","mobile":"9823711612"},{"name":"NISHIT SUMAN SHAH","email":"sejalnishit@gmail.com","mobile":"7021146855"},{"name":"BHASHYA RAJU SHETH","email":NaN,"mobile":"9819700349"},{"name":"VIRAL HIRENDRA SHAH","email":"shah1968ah@gmail.com","mobile":"9821142943"},{"name":"MONA SANJAY SHAH","email":"doshimetal@hotmail.com","mobile":"9819260194"},{"name":"SHEETAL JAYANTILAL SHAH","email":"sheetalajbani176@gmail.com","mobile":"9819092901"},{"name":"JENIL SUNIL SHAH","email":"jenilshah0111@gmail.com","mobile":"9820289261"},{"name":"DILIP NAGINDAS SHAH","email":"dilipnsco@gmail.com","mobile":"9820016672"},{"name":"SANJAY GUNVANTARI THAKKER","email":"thakkarsg@yahoo.com","mobile":"8512077373"},{"name":"HARSH GORDHANDAS THAKKAR - Chetan Sir","email":"harshgthakkar@gmail.com","mobile":"9821220202"},{"name":"SHWETAL DEEPAK TAWARI","email":"shwetaltawari07@gmail.com","mobile":"9869679690"},{"name":"TALIB RASHEED ABDUL (REF NAYAN V MEHTA)","email":"talibabdul977@gmail.com","mobile":"9928916709"},{"name":"TOHEED KAGZI","email":"toheedkagzi6270@gmail.com","mobile":"9928916709"},{"name":"MILIND MADHUKAR TALATHI","email":"milindtalathi17@gmail.com","mobile":"8369829176"},{"name":"ANKIT KIRIT TANNA","email":"ankit@lagomit.com","mobile":"7666777211"},{"name":"UMESH THAKKAR (REF RCMA)","email":"gayatri.chemical@gmail.com","mobile":"9930994841"},{"name":"SACHIN SHRIKANT TODUR","email":"todur85@gmail.com","mobile":"9819643683"},{"name":"VAISHALI AMAR TRIVEDI (REF SHETAL NIKHIL JOSHI)","email":"vatrivedi12@gmail.com","mobile":"7405281295"},{"name":"PRADEEP GHANSHYAM UPADHAYA","email":"pradeepupadhyay66113@gmail.com","mobile":"9833952800"},{"name":"MALLIKARJUN SABANNA UNGARE (VIKAS GUPTA STAFF)","email":"ungremallesh@gmail.com","mobile":"9321458305"},{"name":"SHAILESH VALLABHDAS UDESHI (REF RAVI MEHTA)","email":"udeshico@gmail.com","mobile":"9870129460"},{"name":"AAKIB USMAN (REF VIKAS GUPTA STAFF)","email":"aakifu030@gmail.com","mobile":"8879363740"},{"name":"SATYEN ASHVIN VED","email":"satyenved@printvision.org","mobile":"9820136761"},{"name":"VIRAL ASHVIN VED","email":"viralved@yahoo.co.uk","mobile":"9820306906"},{"name":"PARESH BHUPENDRA VORA","email":"voraparesh4@gmail.com","mobile":"9820940270"},{"name":"VRAJ RAMESH MEHTA","email":"vraj.mehta0211@gmail.com","mobile":"8169671550"},{"name":"PRAKASH KANAIYALAL VAGHANI - Chetan Sir","email":"pkvaghani@gmail.com","mobile":"9820017809"},{"name":"BHAVESH KESHAVBHAI VAGHELA","email":NaN,"mobile":"9802497324"},{"name":"SAUMIK DILIP VORA","email":"saumik.vora@gmail.com","mobile":"9820138006"},{"name":"HEET KAVIN VALIA","email":"vkavin@rediffmail.com","mobile":"19821499314"},{"name":"NARENDRA BABULAL VORA","email":"NARENDRA.1951@YAHOO.COM","mobile":"8879206708"},{"name":"ANAND BHUPENDRA VAIDYA","email":"VAIDYAMITALI3@GMAIL.COM","mobile":"9819797387"},{"name":"DEEPAK J VASA","email":"hemantvasa@yahoo.co.in","mobile":"9869768767"},{"name":"TARANG PRAFULL VIJAYAKAR","email":"tarang.benz@gmail.com","mobile":"9821430596"},{"name":"MAHAVIR VAID","email":NaN,"mobile":"9820217643"},{"name":"JAYEN NIKHILESH VORA","email":"jay_vs79@yahoo.com","mobile":"9322798709"},{"name":"RADHESHYAM JHALAIRAM YADAV","email":"RADHESHYAMY20@GMAIL.COM","mobile":"9820235188"},{"name":"SUDHANSHU YANDE","email":"SUDHANSHUYANDE@GMAIL.COM","mobile":"9920212599"},{"name":"MITHILESH GANESH YADAV","email":"harshyadav7208196408@gmail.com","mobile":"7208196408"},{"name":"SUNIL ZAVERI","email":"akashzaveri311091@gmail.com","mobile":"9820782820"},{"name":"PRATISH SURESH ZAVERI","email":"pratishzaveri@gmail.com","mobile":"9820764317"},{"name":"SAGAR SAHADEV SAWANT (REF DHAIRIYA JOSHI)","email":"SAGARSAWANT2182@GMAIL.COM","mobile":"7378539952"},{"name":"JHEEL NALIN MEHTA (REF BHARAT K SHAH)","email":"JHEELM97@GMAIL.COM","mobile":"9969977898"},{"name":"CHETAN RAMESH CHOPRA (REF VIKAS GUPTA)","email":"jindtimeonline@yahoo.com","mobile":"9819593801"},{"name":"RITESH NAMDEV CHACHLE (REF POOJA LAD)","email":"rchachle15@gmail.com","mobile":"9769977671"},{"name":"PRATHAMESH PRADEEP GHANEKAR (REF POOJA LAD)","email":"prathameshghanekar0@gmail.com","mobile":"8850293845"},{"name":"KISHAN BHAGYNATH RAJBHAR(REF MAYUR PAWAR)","email":"kishanrajbhar46@gmail.com","mobile":"7977347142"},{"name":"PAWAN LALTA PRASAD VISHWAKARMA (REF SACHIN SAWANT)","email":"vishwakarmapawan1988@gmail.com","mobile":"9920172032"},{"name":"DHARMENDRA KUMAR(REF M L MEHTA STAFF)","email":"kumardharmendra35269@gmail.com","mobile":"8291874233"},{"name":"MAYUR PANDURANG PAWAR(REF SARIKA BHEKOLE)","email":"mayurpawar3590@gmail.com","mobile":"7039508494"},{"name":"ANANT DHANANJAY PARAB (REF SURENDRA SAWANT)","email":"dparab312@gmail.com","mobile":"9403113239"},{"name":"YASH SANTOSH SAWANT (REF SURENDRA SAWANT)","email":"yashsawant2502@gmail.com","mobile":"8468991352"},{"name":"SANJAY NARENDRA BALI","email":"sanjaybali18@gmail.com","mobile":"9920285851"},{"name":"ROHIT VERMA","email":"vermarohit8392@gmail.com","mobile":"9039212077"},{"name":"RAVI KANT SINGH (REF MILIND TALATHI)","email":"ravikantsingh23@gmail.com","mobile":"7977020560"},{"name":"BHARTI R VISHWAKARMA(REF BHAVESH OFC STAFF)","email":"bharti.vishwakarma.16.94@gmail.com","mobile":"8655327035"},{"name":"JATAN VITEJ SHAH","email":"jatanshah13@gmail.com","mobile":"8080517140"},{"name":"SAMIR SANJAY MASEKAR (REF SACHIN SAWANT)","email":"sameermasekar593@gmail.com","mobile":"7039438171"},{"name":"CHETNA NALIN SHAH( JUST DAIL)","email":"chetnashah06@gmail.com","mobile":"9821126469"},{"name":"SURAJ KESHAV JOSHI( REF OMKAR JANGAM)","email":"SURAJJOSHI635@GMAIL.COM","mobile":"9930049285"},{"name":"LAXMAN MORLING JANGAM( REF OMKAR JANGAM)","email":"laxmanjangam1112@gmail.com","mobile":"9819223804"},{"name":"SMRITI TIWARI(REF GANESH MISHRA)","email":"SMRITIDWIVEDI161@GMAIL.COM","mobile":"9022138573"},{"name":"JIGNASHA HIRAL CHAUHAN (REF TRICIA DESOUZA)","email":"chauhanjigna95@gmail.com","mobile":"8419966217"},{"name":"DEVENDRA VIJAY WADGE","email":"devendrawadge@gmail.com","mobile":"9920558515"},{"name":"RAKESH DAYASHANKAR PATEL (REF MUKUL MEHTA)","email":"newgreenapplea80@gmail.com","mobile":"9892196433"},{"name":"MITESH DIPAKBHAI SHIYAL","email":"mshiyal279@gmail.com","mobile":"8780766906"},{"name":"SHIFA SHAIKIL SHAIKH - AISEC","email":"shifashaikh1205@gmail.com","mobile":"7045046181"},{"name":"GRANTH CHETAN JAIN- AISEC","email":"granthdhalawat@gmail.com","mobile":"9653223781"},{"name":"MANJIRI PRASHANT KHODKE- AISEC","email":"manjiri.khodke56@gmail.com","mobile":"8459998150"},{"name":"PRIHAS SUHAS PAWAR - AISEC","email":"prihaspawar2@gmail.com","mobile":"7020538361"},{"name":"DHRUV AGARWAL - AISEC","email":"agarwaldhruv874@gmail.com","mobile":"9565222250"},{"name":"SHRUTI AKASH CHANDEKAR- AISEC","email":"shrutichandekar661@gmail.com","mobile":"9403543686"},{"name":"BUSHRA AFSAR KHAN- AISEC","email":"khanbushra2808@gmail.com","mobile":"8390417940"},{"name":"BHARAT KANTILAL SHAH","email":"bharatshah527@gmail.com","mobile":"9820470480"},{"name":"RAMGOPAL RAMAVADH GUPTA","email":"nishavikas@technologyandgadgets.com","mobile":"9594735300"},{"name":"KHUSHI JAYESH SHAH (REF SUHAANI SHAH)","email":"shahkhushi0401@gmail.com","mobile":"9769020489"},{"name":"HARSHADA DATTARAM VENGUELEKAR (REF CHETAN KULE)","email":"vengurlekarharshada21@gmail.com","mobile":"8693881328"},{"name":"SHAIKH IBRAHIM HUSSAIN ( REF AMISHA VASA STAFF)","email":"ibrahim.maiyas@gmail.com","mobile":"7767057533"},{"name":"OMKAR PUNDALIK RANE (REF SACHIN SAWANT)","email":"omirane99@gmail.com","mobile":"9324643232"},{"name":"CHINTAN ARVIND SHAH (REF PRAVIN GADHIA)","email":"CHINTANGALA16@GMAIL.COM","mobile":"9819591370"},{"name":"MEHUL DHIRENDRA BARAI (REFF VIRAL KUVADIA)","email":"mehuldbarai@gmail.com","mobile":"9820301945"},{"name":"PRAVIN CHANDRAKANT MANDAVKAR (REF HIMANSHU MAVANNI STAFF)","email":"scitechmumbai@gmail.com","mobile":"9773280430"},{"name":"LAXMANBHAI JESABHAI AYAR (REF RONAK LIMBACHIYA)","email":"lamanbhaiahir@gmail.com","mobile":"9727289841"},{"name":"PADMANABH SHIVRAM GOWDA (REF CHANDRAVNDAN MEHTA)","email":"padmanabhagowda78@gmail.com","mobile":"8356015336"},{"name":"TEJAS DHANESHWAR PANDYA (REF CHETAN SIR FRIEND)","email":"tejaspandya87@gmail.com","mobile":"9099977006"},{"name":"ALPESH UTTAMCHAND SHETH","email":NaN,"mobile":"9819925352"},{"name":"VIJAYA VASANT NAGWEKAR ( REF KETAN GENERAL ADITIVE )","email":"vijayanagwekar87@gmail.com","mobile":"9820312980"},{"name":"MAITRI MANOJ GALA","email":"maitrigala1@gmail.com","mobile":"8976372373"},{"name":"ASHOK KANTILAL DOSHI","email":"alloysteel@gmail.com","mobile":"9322226641"},{"name":"AVADHUT SHANKAR DHAGE(REF NIRAV N SHAH) - chetan Sir","email":"avadhut_d@yahoo.com","mobile":"9867789354"},{"name":"CHANDANSINGH SUNDARSINGH MANRAL","email":"chandansingh91624@gmail.com","mobile":"9768106933"},{"name":"DEVANG A SHAH","email":"devangshu475 @yanav.co.in","mobile":"9322277317"},{"name":"ASHISH KUMAR MITRA (REFF GIRIJA MOHAN)","email":"ashishmitra49@gmail.com","mobile":"9611978570"},{"name":"KISHAN VITHALDAS ASHAR","email":"falguni.ashar@gmail.com","mobile":"9167765661"},{"name":"KIRTHANA IYER (REFF VIRAL VED)","email":"kirtz.iyer@outlook.com","mobile":"9819728222"},{"name":"SAMIR BHARAT SHAH","email":NaN,"mobile":"9821379569"},{"name":"HEMANG JAYANT SHAH","email":"hemangenterprises@gmail.com","mobile":"9820729700"},{"name":"JAGDISH SHNTILAL MEHTA","email":"sjmstock@yahoo.co.in","mobile":"9820597598"},{"name":"JASWANTRAI K DHAMI","email":"rajudhami@gmail.com","mobile":"9224637000"},{"name":"MURLI MANOHARLAL RAMNANI (REF VIMAL LAKHANI)","email":"m.ramnani@rediffmail.com","mobile":"9820288196"},{"name":"JITENDRAKUMAR KANTILAL MEHTA","email":"jitu@isdg-inc.com","mobile":"8187238813"},{"name":"KIRIT VRAJATLAL GEDHIA","email":"kiritgedia2@gmail.com","mobile":"9825230197"},{"name":"KIRTI KONDIBA BOMBLE","email":NaN,"mobile":"9819051918"},{"name":"KISHOR NARAYAN SHITKAR","email":NaN,"mobile":"9619403634"},{"name":"MAHADEV CHOUDHARY","email":"shreekrishnacateringservice785@gmail.com","mobile":"9518589488"},{"name":"MANDAR SUDHAKAR CHAVAN","email":NaN,"mobile":"9405399336"},{"name":"PRADEEP HASMUKH DOSHI","email":"doship29@yahoo.com","mobile":"9821151951"},{"name":"RAJESH CHHOTALAL GANDHI","email":"rajeshgandhi1062@gmail.com","mobile":"9820079744"},{"name":"RAMA RASHMIKANT KINI","email":NaN,"mobile":"7303655525"},{"name":"RAMNIKLAL GANESH KAMDAR","email":NaN,"mobile":"9930949603"},{"name":"SANYAM KETAN DEDHIA","email":"rahul.dedhia@yahoo.com","mobile":"9820206999"},{"name":"RASIKBHAI RAMJI RAJGOR","email":"kaushik_rajgor@yahoo.co.in","mobile":"9867085791"},{"name":"SUNILKUMAR SHANTILAL NAVEDIA","email":"rushabhnavedia@gmail.com","mobile":"9821148866"},{"name":"TUSHAR MOHAN JAGATAP - REFF","email":"TUSHARJAGTAP687@GMAIL.COM","mobile":"9004689658"},{"name":"VILAS APPA DEVANE","email":"documentchetan@gmail.com","mobile":"9322412125"},{"name":"VINOD VASANTRAO ZOD","email":"vinodzod@yahoo.com","mobile":"9223288433"},{"name":"VIPUL PRAVIN SHAH","email":"vipulshah3241@gmail.com","mobile":"9223433241"},{"name":"VISANJI VIJPAR CHHEDA","email":"vasantchheda007@gmail.com","mobile":"9821407799"},{"name":"RAJESH BALKRISHNA PARALKAR","email":"rajparalkar@rediffmail.com","mobile":"9820379279"},{"name":"SUDHAKAR KALAMBE","email":"sanaya.kalambe@yahoo.com","mobile":"9821135000"},{"name":"VINOD BABU CHUDASAMA","email":"2512.vinod@gmail.com","mobile":"9224646450"},{"name":"BHADRESH SHAHEL SUDANI","email":"apr24658@gmail.com","mobile":"9664126636"},{"name":"MRUNMAI DINESH PAWAR (REF SHARDHA LAD)","email":"mrunmai.invest@gmail.com","mobile":"8369883318"},{"name":"AJAY ANILKUMAR KHANDHAR","email":NaN,"mobile":"9322790405"},{"name":"DHIARYA KAUSHIK JOSHI","email":NaN,"mobile":"9029093411"},{"name":"ISHITA RAKESH DESAI","email":"ishitadesai97@gmail.com","mobile":"8655434225"},{"name":"RAJIV KUMAR","email":"mailtorajiv01@gmail.com","mobile":"8910505653"},{"name":"AKSHAY A GOWLE","email":"akshayagowle@gmail.com","mobile":"9594406117"},{"name":"SANJAY SUBASH VISHWAS","email":"SANJAYVISHWAS12397@GMAIL.COM","mobile":"9870479301"},{"name":"CHHAYA J CHUDGAR","email":"chhayajanak93@gmail.com","mobile":"9930584471"},{"name":"SWATI PRAKASH MHATRE","email":"swatimhatre1150@gmail.com","mobile":"9821909381"},{"name":"KRUTI ATUL DESAI","email":"krutid1987@gmail.com","mobile":"7506179753"},{"name":"MUSKAAN A HARSORA","email":"muskaanharsoraa@gmail.com","mobile":"9326686310"},{"name":"SILAS HABEL RANA","email":"RANAJOEL178@GMAIL.COM","mobile":"9619333738"},{"name":"JAYESH NATHURAM GAIKWAD","email":NaN,"mobile":"8108231248"},{"name":"KALPEN RASIKLAL BHATT","email":"KALPEN21@GMAIL.COM","mobile":"9892448613"},{"name":"VIKRAM JAYWANT SHITAP (REF JYOTI MUDALIAR)","email":"vikramshitap744@gmail.com","mobile":"7447894700"},{"name":"NILESH MANOHAR JADHAV","email":"NILESHY1983@GMAIL.COM","mobile":"9594787754"},{"name":"MAHER KIRIT SHAH (REF- PARTH MANIAR)","email":"maher31@gmail.com","mobile":"9920163124"},{"name":"JAYANTILAL RAMNIKLAL DHOLAKIA - Chetan Sir","email":"nimit.balaji@gmail.com","mobile":"9004256215"},{"name":"SANGITA NARESH ITALIA","email":"SANGITAITALIA@GMAIL.COM","mobile":"9920724042"},{"name":"SHIPRA SAHADEV SHIGVAN (REF SHRADDHA LAD)","email":"shwetashigavan123@gmail.com","mobile":"8454939752"},{"name":"CHANDRASHEKHAR K SINGH","email":"CKSINGH33@YAHOO.IN","mobile":"9136708547"},{"name":"ABISHEKH KUMAR SINGH (REF CHANDRASHEKHAR SINGH)","email":"golu291990@gmail.com","mobile":"7858980867"},{"name":"SHAHEEN ABU SUFYAN MOMIN (REF VIKAS GUPTA STAFF","email":"shaheenmomin04@gmail.com","mobile":"7045449192"},{"name":"PURUSHOTTAM ATMARAM SOLANKI (REF SUNITA PATIL)","email":"purushottamsolanki637@gmail.com","mobile":"9920232312"},{"name":"MANSI PAWAN AGARWAL REF SHUBHAM SHAH)","email":"mansiagarrwal01@gmail.com","mobile":"7303963373"},{"name":"MAHENDRA VASUDEO SAVARDEKAR","email":"savardekarmahendra9@gmail.com","mobile":"9870172724"},{"name":"ADITI APPA NAIK (REF - SURENDRA SAWANT)","email":"ADITINAIK2303@GMAIL.COM","mobile":"9763695314"},{"name":"HEMAL ANANTBHAI PAREKH","email":"hemal9820427999@gmail.com","mobile":"9820427999"},{"name":"LEKHESH ANANTRAI PAREKH","email":"nishaparekh2011@gmail.com","mobile":"9820427992"},{"name":"HET PRAJAPATI (REF RONAK LIMBACHIA)","email":"HETPRAJAPATI498@GMAIL.COM","mobile":"9825261457"},{"name":"ANUSHIYA MAIDEEN PANDIAN (REF -THELMA ALVARES)","email":"anushiyapandian0@gmail.com","mobile":"8169518820"},{"name":"NARESH RASIKLAL SHAH","email":"nareshshah.mumbai@gmail.com","mobile":"9820481182"},{"name":"DEVYANI VILAS MOHITE (REF SURUCHI MOHITE SISTER)","email":"niryadhira25@gmail.com","mobile":"9321259212"},{"name":"ILA RAJESH PAREKH (REF KENIL VORA)","email":"parekh6363@gmail.com","mobile":"7303276569"},{"name":"KANOL PARBAT JETHABHAI (REF-RONAK LIMBACHIA)","email":"parbatkanol8030@gmail.com","mobile":"9769277764"},{"name":"SANGEETA SUNIL KHARADE (REF-JYOTI MUDALIAR)","email":"SANGEETAKHARADE10@GMAIL.COM","mobile":"9653497135"},{"name":"JIGAR NILESH THAKOR (REF-PANKAJ PATEL)","email":"jigart488@gmail.com","mobile":"7506698726"},{"name":"AYAR RAMESHBHAI AJMALBHAI (REF-PANKAJ PATEL)","email":"AHIR2281998@GMAIL.COM","mobile":"8369985631"},{"name":"PANNA KIRIT GEDIA (NAYAN KATRODIA-MOTHER IN LAW)","email":"KRISHNAKATRODIA687@GMAIL.COM","mobile":"9429321158"},{"name":"SWAMI VISHVESHWARANAND (SWAMI KAPIL PURI)","email":"swamivanand@gmail.com","mobile":"9821030654"},{"name":"NIKITA DHAVAL SHAH (CHETNA SHAH- DAUGHTER)","email":"nikitasogo@gmail.com","mobile":"9930333110"},{"name":"SUNIL DINESH SHAH","email":"sunilshah@chemtronicsindia.com","mobile":"9321234527"},{"name":"MINESH MULCHAND SHAH","email":"minesh33shah@gmail.com","mobile":"9820024612"},{"name":"HETAL SAMIR SHAH(DIPESH KOTHARI SISTER )","email":"breachcandygal@gmail.com","mobile":"9867389101"},{"name":"ARCHANA HIRAMAN NIRBHAVANE","email":"archananirbhavane1@gmail.com","mobile":"7738330022"},{"name":"HARSH JAIDEEP DESAI (MITA MEHTA -SPOUSE)","email":"harshdesai0196@gmail.com","mobile":"9820877613"},{"name":"MANDAR CHATE (REF -DISHA MEHTA)","email":"mandarchate@gmail.com","mobile":"9870295045"},{"name":"UMAR MOHAMMED FAROOQUE","email":"shaikh@dehorizontravels.com","mobile":"7900075581"},{"name":"MANOHAR MARUTI GHOTKULE (REF - HARDIK LIMBACHIA)","email":"manohargutkule@gmail.com","mobile":"9158702270"},{"name":"MINAL PRAKASH JAISINGHANI (chetan sir school friend)","email":"minishjai@yahoo.com","mobile":"9820844214"},{"name":"MOHAMMED UMAR MOHAMMED FAROOQUE SHAIKH (REF - CHETAN SIR)","email":"shaikh@dehorizontravels.com","mobile":"7900075581"},{"name":"KRUNAL CHITRANJAN VYAS (REF-MINAL JAISINGHANI)","email":"krunal_vyas@yahoo.com","mobile":"9833880408"},{"name":"MIHIR SUBODH GANDHI","email":"mihir_gandhi89@yahoo.com","mobile":"9821964519"},{"name":"MUKESH AMRUTLAL PRAJAPATI (REFF - MALAK NANDU)","email":"mp1241889@gmail.com","mobile":"9987933905"},{"name":"KAJAL RAJESH KUMAR YADAV (REFF - MALAK NANDU)","email":"kajalyad101@gmail.com","mobile":"9324161295"},{"name":"SIMRAN AMAR SINGH PANT (REFF - SANMITRA KUVESKAR)","email":"pantsimran24@gmail.com","mobile":"9082128655"},{"name":"GOHIL SHILPA MAHESH","email":"shilpa.gohil712@gmail.com","mobile":"9167031659"},{"name":"MALAK NITIN NANDU (REFF - SHUBHAM SHAH)","email":"malaknandu1399@gmail.com","mobile":"9920776965"},{"name":"SANDEEP MARUTI SUTAR (REFF - MALAK NANDU)","email":"21sandeepsutar@gmail.com","mobile":"9920376265"},{"name":"PARUL B MEHTA REFF - BHAVIN MEHTA","email":"mehtaparul76@gmail.com","mobile":"9820214608"},{"name":"ADITI SANJAY SHRIVASTAVA REFF - MAYNK VERMA","email":"aditishrivastava248@gmail.com","mobile":"9754031043"},{"name":"JASH KULIN RAVAL REFF - ASHIT VASA","email":"Jashkraval@gmail.com","mobile":"9323938402"},{"name":"DHAVAL MUKESH MISTRY (Ref - Nippon mutual fund RM)","email":"dhavalmistry327@gmail.com","mobile":"9619748624"},{"name":"BHUMIKA YATIN NAGDA(REF-JIGAR)","email":"bhumikanagda89@gmail.com","mobile":"9833750337"},{"name":"SARBJEET SINGH (Ref - Navneet Dave)","email":"serbjeets@gmail.com","mobile":"9821429625"},{"name":"AJIT VAMAN VISPUTE (Ref - Dr Nikhil shah)","email":"avispute@gmail.com","mobile":"9820040658"},{"name":"MANOJ KRIPASHANKAR TIWARI (REF - ANILKUMAR DOSHI)","email":"Manoj@nvr-logistics.com","mobile":"9819499880"},{"name":"SHYAM SUNDER PANDIT (REF - AMISH MEHTA)","email":"shyampandit7077@gmail.com","mobile":"9326417077"},{"name":"EKRAM AMRIKA GUPTA (REF SACHIN SAWANT)","email":"EKRAMGUPTA33@GMAIL.COM","mobile":"9822766373"},{"name":"SHANTILAL JAYANTI RATHOD","email":"shantilalrathod@ymail.com","mobile":"9870847884"},{"name":"PRATIK SRINIVAS TAWDE (REF NARESH SHETH STAFF)","email":"tawdepratik9@gmail.com","mobile":"8369245049"},{"name":"DINESH BHUPATRAI DOSHI (BHARAT DOSHI)","email":"doshid849@gmail.com","mobile":"9004006061"},{"name":"GEETA VINOD PATEL (REFF PULIN GARODIA)","email":"DHARMESHPATEL5000.DP@GMAIL.COM","mobile":"9769788070"},{"name":"PRABHAKAR MURLIDHAR RAUT (REFF - VIKRAM SANGHAVI)","email":"RAUTPRABHAKARM@GMAIL.COM","mobile":"9004991755"},{"name":"AMIT DHANPAL PARIKH","email":"AMIT@ELEGAN.NET","mobile":"9820079459"},{"name":"JIGNESH DHANPAL PARIKH","email":"PAP.1973@YAHOO.CO.IN","mobile":"9820245068"},{"name":"RAHUL DHANPAL PARIKH","email":"TORAHUL1977@GMAIL.COM","mobile":"9820244729"},{"name":"SAGAR DNYANESHWAR NIGHOJKAR - REFF- JYOTI PASHTE HUSBAND","email":"NIGHOJKARSAGAR@HOTMAIL.COM","mobile":"9967043737"},{"name":"NISHAD ASHOK KADAM (REF MANOJ GALA)","email":"kadam.nishad8@yahoo.com","mobile":"8097339653"},{"name":"KRUNAL BIPIN MANIAR (REF MITHALI VADYA)","email":"kunal71984@yahoo.co.in","mobile":"9967533080"},{"name":"AKSHAY CHANDRAKANT UMBARKAR (REF DHARMESH PATEL)","email":"akshayumbarkar2011@gmail.com","mobile":"9819052016"},{"name":"SHAKUNTALA SATISH SONI (REF KARTIK BHATIA)","email":"sgadenwala@hotmail.com","mobile":"9820701111"},{"name":"DEEP PRAKASH BHARWANI (REF PRANAV PRAKSH)","email":"bharwani.deep@gmail.com","mobile":"9819581885"},{"name":"MAHESH KUMAR BHARWANI (REF DEEP P BHARWANI)","email":"mrbharwani@gmail.com","mobile":"9821117234"},{"name":"ANMOLDEEP KAUR REFF - MANISH SHANGHAVI","email":"ANMOLAHUJA92@GMAIL.COM","mobile":"9569000081"},{"name":"VIVEK DHANANJAY TRIVEDI REF - NIKHIL SHIRISH JOSHI","email":"vtrivedi364@gmail.com","mobile":"9820166100"},{"name":"SANA ALAM - REF GAURAV PAREKH - NIPESH PATEL ","email":NaN,"mobile":NaN},{"name":"DHANPAL NAGINDAS PARIKH - FATHER OF AMIT -JIGNESH - RAHUL","email":" ","mobile":NaN},{"name":"PRACHI AVINASH SALKADE","email":" ","mobile":NaN},{"name":"MITESH JAGJIVANDAS MEHTA - REF CHETAN SHETH ","email":NaN,"mobile":NaN},{"name":"PRABHAKAR RAUT - VIKRAM SANGHAVI ","email":" ","mobile":NaN},{"name":"YATIN NAIK - REF - PRASHANT ANJALI ","email":NaN,"mobile":NaN},{"name":"DR KEDAR - REF - PRASHANT ANJALI ","email":NaN,"mobile":NaN},{"name":"HASMIKH GORASIA - GHATKOPAR ","email":NaN,"mobile":NaN}]
+;
+
+// ===================== STATE =====================
+// All data lives in these two arrays — simple, reliable
+let customers = [];   // [{id, name, email, mobile}]
+let callLogs = [];    // [{id, clientId, date, outcome, followup, notes, createdAt}]
+
+let logCid = null;   // current client being logged
+let histCid = null;  // current client for history modal
+
+// Table state
+let pg = 1;
+const PG = 25;
+let srchVal = '';
+let fltVal = '';
+let sortC = 'name';
+let sortD = 1;
+
+let sharedDbAvailable = false; // Maps to Firebase status for backward compatibility
+let isFirebaseInitialized = false;
+let firebaseSaveTimer = null;
+let firebaseListener = null;
+
+// ===================== FIREBASE CONFIG & SYNC =====================
+function getFirebaseConfig() {
+  // 1. Try file config
+  if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey && window.FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY") {
+    return window.FIREBASE_CONFIG;
+  }
+  // 2. Try localStorage config
+  const local = localStorage.getItem('firebase_config');
+  if (local) {
+    try {
+      return JSON.parse(local);
+    } catch(e) {}
+  }
+  return null;
+}
+
+function initFirebase() {
+  const config = getFirebaseConfig();
+  if (!config) {
+    sharedDbAvailable = false;
+    isFirebaseInitialized = false;
+    return false;
+  }
+  try {
+    if (typeof firebase === 'undefined') {
+      console.error("Firebase SDK not loaded");
+      sharedDbAvailable = false;
+      isFirebaseInitialized = false;
+      return false;
+    }
+
+    // Detach old listener if any
+    if (firebaseListener && typeof firebase !== 'undefined') {
+      try { firebase.database().ref('calltrack').off('value', firebaseListener); } catch(e) {}
+      firebaseListener = null;
+    }
+
+    // Delete existing app before re-initializing
+    if (firebase.apps.length > 0) {
+      try { firebase.app().delete(); } catch(e) {}
+    }
+    
+    // Auto-detect missing databaseURL if projectId is present
+    if (!config.databaseURL && config.projectId) {
+      config.databaseURL = `https://${config.projectId}-default-rtdb.firebaseio.com`;
+    }
+
+    firebase.initializeApp(config);
+    sharedDbAvailable = true;
+    isFirebaseInitialized = true;
+    return true;
+  } catch(e) {
+    console.error("Firebase init error:", e);
+    sharedDbAvailable = false;
+    isFirebaseInitialized = false;
+    return false;
+  }
+}
+
+function loadFirebaseDB() {
+  if (!isFirebaseInitialized) return;
+  const dbRef = firebase.database().ref('calltrack');
+  
+  if (firebaseListener) {
+    dbRef.off('value', firebaseListener);
+  }
+  
+  firebaseListener = dbRef.on('value', (snapshot) => {
+    const d = snapshot.val();
+    // Load from Firebase if it has real data
+    if (d && Array.isArray(d.customers) && Array.isArray(d.calls) && d.customers.length > 0) {
+      customers = d.customers;
+      callLogs = d.calls;
+      localStorage.setItem('calltrack_data', JSON.stringify({ customers, calls: callLogs }));
+      toast('Cloud database updated', 'ok');
+      renderAll();
+      return;
+    }
+    // Firebase has no data — use local data and let save() push to cloud later
+    const saved = localStorage.getItem('calltrack_data');
+    if (saved) {
+      try {
+        const localData = JSON.parse(saved);
+        if (localData.customers && localData.customers.length > 0) {
+          customers = localData.customers;
+          callLogs = localData.calls || [];
+          renderAll();
+          return;
+        }
+      } catch(e) {}
+    }
+    seedCustomers();
+    renderAll();
+  }, (error) => {
+    console.error("Firebase read failed:", error);
+    toast('Cloud sync failed. Offline mode active.', 'err');
+    loadBrowserDB();
+    renderAll();
+  });
+}
+
+function queueFirebaseSave() {
+  clearTimeout(firebaseSaveTimer);
+  firebaseSaveTimer = setTimeout(saveFirebaseDBDirect, 500);
+}
+
+function saveFirebaseDBDirect() {
+  if (!isFirebaseInitialized) return;
+  const data = { version: 1, exportedAt: new Date().toISOString(), customers, calls: callLogs };
+  firebase.database().ref('calltrack').set(data)
+    .then(() => {
+      // Quiet success
+    })
+    .catch(err => {
+      console.error("Firebase write failed:", err);
+      toast('Cloud save failed! Storing locally.', 'err');
+    });
+}
+
+// ===================== INIT =====================
+async function init() {
+  // Load local data first for instant display, then sync Firebase in background
+  loadBrowserDB();
+
+  const isDbConfigured = initFirebase();
+  if (isDbConfigured) {
+    loadFirebaseDB();
+  }
+
+  // Wire up filter dropdown
+  document.getElementById('flt').addEventListener('change', function() {
+    fltVal = this.value;
+    pg = 1;
+    drawTable();
+  });
+
+  renderAll();
+}
+
+function loadBrowserDB() {
+  const saved = localStorage.getItem('calltrack_data');
+  if (saved) {
+    try {
+      const d = JSON.parse(saved);
+      customers = d.customers || [];
+      callLogs = d.calls || [];
+      return;
+    } catch(e) {}
+  }
+  seedCustomers();
+}
+
+// Built-in seed mapper
+function seedCustomers() {
+  customers = SEED.map((c, i) => ({ id: 'c' + i, name: c.name, email: c.email || '', mobile: String(c.mobile || '') }));
+  callLogs = [];
+  save();
+}
+
+// ===================== PERSIST =====================
+function save() {
+  localStorage.setItem('calltrack_data', JSON.stringify({ customers, calls: callLogs }));
+  updateDBStatus();
+  if (isFirebaseInitialized) {
+    queueFirebaseSave();
+  }
+}
+
+// ===================== FIREBASE SETUP UI =====================
+function openFirebaseSetup() {
+  const config = getFirebaseConfig();
+  document.getElementById('fb-config-text').value = config ? JSON.stringify(config, null, 2) : '';
+  document.getElementById('m-fbsetup').classList.add('open');
+}
+
+function saveFirebaseConfigUI() {
+  let txt = document.getElementById('fb-config-text').value.trim();
+  if (!txt) {
+    toast('Please enter the configuration', 'err');
+    return;
+  }
+
+  // Extract the first { ... } object from whatever the user pasted
+  const startB = txt.indexOf('{');
+  const endB = txt.lastIndexOf('}');
+  if (startB === -1 || endB === -1 || endB < startB) {
+    toast('❌ Could not find a { ... } object in the pasted text.', 'err');
+    return;
+  }
+  const objStr = txt.substring(startB, endB + 1);
+
+  // Try JSON.parse first (strict JSON with quoted keys)
+  let parsed = null;
+  try {
+    parsed = JSON.parse(objStr);
+  } catch(e) {
+    // Fallback: evaluate as a JavaScript object literal
+    try {
+      parsed = new Function('"use strict"; return (' + objStr + ')')();
+    } catch(e2) {
+      console.error('Config parse failed:', e2);
+    }
+  }
+
+  if (!parsed || typeof parsed !== 'object' || !parsed.apiKey) {
+    toast('❌ Invalid config: missing apiKey. Paste the full object from Firebase Console > Project Settings > Your apps.', 'err');
+    return;
+  }
+
+  if (!parsed.databaseURL && !parsed.projectId) {
+    toast('❌ Invalid config: missing databaseURL or projectId.', 'err');
+    return;
+  }
+
+  localStorage.setItem('firebase_config', JSON.stringify(parsed));
+  closeM('m-fbsetup');
+  toast('✅ Firebase config saved!', 'ok');
+
+  if (initFirebase()) {
+    loadFirebaseDB();
+    updateDBStatus();
+    // Push local data to cloud (outside listener to avoid re-entrant loops)
+    if (customers.length > 0) {
+      setTimeout(saveFirebaseDBDirect, 1500);
+    }
+  } else {
+    updateDBStatus();
+    toast('❌ Failed to connect. Open browser console (F12) for details.', 'err');
+  }
+}
+
+function clearFirebaseConfig() {
+  if (!confirm('Clear Firebase config and disconnect from the cloud?')) return;
+  localStorage.removeItem('firebase_config');
+  closeM('m-fbsetup');
+  toast('Disconnected from cloud.', 'inf');
+  
+  // Detach listener if any
+  if (firebaseListener && typeof firebase !== 'undefined') {
+    try {
+      firebase.database().ref('calltrack').off('value', firebaseListener);
+    } catch(e) {}
+  }
+  firebaseListener = null;
+  
+  isFirebaseInitialized = false;
+  sharedDbAvailable = false;
+  loadBrowserDB();
+  renderAll();
+}
+
+function updateFirebaseStatusUI() {
+  const statusEl = document.getElementById('fb-status');
+  if (!statusEl) return;
+  
+  if (isFirebaseInitialized) {
+    const config = getFirebaseConfig();
+    statusEl.style.background = 'linear-gradient(135deg,#f0fdf4,#dcfce7)';
+    statusEl.style.borderColor = '#bbf7d0';
+    statusEl.innerHTML = `<span style="color:var(--green);font-weight:700;">● Cloud Connected</span><br>
+      Connected to project: <strong>${config.projectId}</strong><br>
+      <span style="color:var(--muted);font-size:12px;margin-top:4px;display:block;">All changes sync automatically to the cloud database in real-time.</span>`;
+  } else {
+    statusEl.style.background = 'linear-gradient(135deg,#fef2f2,#fff5f5)';
+    statusEl.style.borderColor = '#fecaca';
+    statusEl.innerHTML = `<span style="color:var(--red);font-weight:700;">● Running Offline (Local Mode)</span><br>
+      Firebase is not configured. Data is saved only in this browser.<br>
+      <span style="color:var(--muted);font-size:12px;margin-top:4px;display:block;">Configure Firebase above to enable sync across multiple PCs.</span>`;
+  }
+}
+
+window.addEventListener('pagehide', function() {
+  if (firebaseSaveTimer) {
+    clearTimeout(firebaseSaveTimer);
+    saveFirebaseDBDirect();
+  }
+});
+
+// ===================== HELPERS =====================
+function today() { return new Date().toISOString().slice(0,10); }
+function thisYM() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function fmtD(s) {
+  if (!s) return '—';
+  const [y,m,d] = s.split('-');
+  return d + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1] + ' ' + y;
+}
+
+function lastCall(cid) {
+  const logs = callLogs.filter(l => l.clientId === cid);
+  if (!logs.length) return null;
+  return logs.reduce((a, b) => a.date > b.date ? a : b);
+}
+
+function status(cid) {
+  const lc = lastCall(cid);
+  if (!lc) return 'never';
+  if (lc.date.slice(0,7) === thisYM()) return 'called';
+  const days = Math.floor((new Date() - new Date(lc.date)) / 86400000);
+  return days > 30 ? 'overdue' : 'due';
+}
+
+function stats() {
+  let called=0, overdue=0, due=0, never=0;
+  customers.forEach(c => {
+    const s = status(c.id);
+    if (s==='called') called++;
+    else if (s==='overdue') overdue++;
+    else if (s==='due') due++;
+    else never++;
+  });
+  const total = customers.length;
+  const pct = total ? Math.round(called/total*100) : 0;
+  return {total, called, overdue, due, never, pct};
+}
+
+function pendingFollowup(cid) {
+  return callLogs.find(l => l.clientId===cid && l.followup && l.followup <= today());
+}
+
+function isNotInterested(cid) {
+  const logs = callLogs.filter(l => l.clientId === cid);
+  if (!logs.length) return false;
+  const latest = logs.reduce((a, b) => a.date > b.date ? a : b);
+  return latest.outcome === 'Not Interested';
+}
+
+// ===================== RENDER ALL =====================
+function renderAll() {
+  const s = stats();
+  // Header stats
+  document.getElementById('h1').textContent = s.total.toLocaleString();
+  document.getElementById('h2').textContent = s.called;
+  document.getElementById('h3').textContent = s.overdue + s.never;
+  document.getElementById('h4').textContent = s.pct + '%';
+  // Dashboard cards (only if visible)
+  const dashOn = document.getElementById('tab-dash').classList.contains('on');
+  if (dashOn) {
+    document.getElementById('d-total').textContent = s.total.toLocaleString();
+    document.getElementById('d-called').textContent = s.called;
+    document.getElementById('d-bar').style.width = s.pct + '%';
+    document.getElementById('d-over').textContent = s.overdue + s.never;
+    document.getElementById('d-due').textContent = s.due;
+    drawDashAlerts(s);
+    drawMonthly();
+  }
+  // Only redraw active tab
+  if (document.getElementById('tab-clients').classList.contains('on')) drawTable();
+  if (document.getElementById('tab-alerts').classList.contains('on')) drawAlerts();
+  if (document.getElementById('tab-calllog').classList.contains('on')) drawDailyLog();
+  if (document.getElementById('tab-db').classList.contains('on')) updateDBStatus();
+}
+
+// ===================== DASHBOARD ALERTS =====================
+function drawDashAlerts(s) {
+  const td = today();
+  // Today's follow-ups: followup date == today
+  const todayFU = [];
+  customers.forEach(c => {
+    const logs = callLogs.filter(l => l.clientId === c.id && l.followup === td);
+    logs.forEach(l => todayFU.push({customer: c, call: l}));
+  });
+
+  // Overdue follow-ups (past due, not today)
+  const overdueFU = [];
+  customers.forEach(c => {
+    const logs = callLogs.filter(l => l.clientId === c.id && l.followup && l.followup < td);
+    logs.forEach(l => overdueFU.push({customer: c, call: l}));
+  });
+
+  const ov = customers.filter(c => status(c.id) === 'overdue').slice(0, 5);
+
+  let html = '';
+
+  // TODAY'S FOLLOW-UPS — prominent section
+  html += `<div class="st">📋 Today's Follow-ups — ${fmtD(td)}</div>`;
+  if (todayFU.length) {
+    todayFU.forEach(({customer: c, call: l}) => {
+      html += `<div class="al warn" style="border-left-color:var(--accent)">
+        <div class="al-t">
+          <strong>${esc(c.name)}</strong>
+          <span>📱 ${esc(c.mobile)} &nbsp;·&nbsp; Last outcome: ${esc(l.outcome)}</span>
+          ${l.notes ? `<span style="display:block;margin-top:2px;font-style:italic">"${esc(l.notes)}"</span>` : ''}
+        </div>
+        <button class="btn btn-p btn-s" onclick="openLog('${c.id}','${esc2(c.name)}')">📞 Call</button>
+      </div>`;
+    });
+  } else {
+    html += `<div class="al ok"><div class="al-t"><strong style="color:var(--green)">✅ No follow-ups scheduled for today</strong></div></div>`;
+  }
+
+  // OVERDUE FOLLOW-UPS
+  if (overdueFU.length) {
+    html += `<div class="st" style="margin-top:16px">⚠️ Overdue Follow-ups (${overdueFU.length})</div>`;
+    overdueFU.slice(0, 5).forEach(({customer: c, call: l}) => {
+      const days = Math.floor((new Date(td) - new Date(l.followup)) / 86400000);
+      html += `<div class="al warn">
+        <div class="al-t">
+          <strong>${esc(c.name)}</strong>
+          <span>Was due ${days} day${days!==1?'s':''} ago (${fmtD(l.followup)}) · ${esc(l.outcome)}</span>
+        </div>
+        <button class="btn btn-p btn-s" onclick="openLog('${c.id}','${esc2(c.name)}')">📞 Call</button>
+      </div>`;
+    });
+    if (overdueFU.length > 5) {
+      html += `<div style="text-align:center;padding:8px;color:var(--muted);font-size:12px">...and ${overdueFU.length - 5} more overdue follow-ups. Check Alerts tab.</div>`;
+    }
+  }
+
+  // OVERDUE CLIENTS (not called in 30+ days)
+  if (ov.length) {
+    html += `<div class="st" style="margin-top:16px">🚨 Not Called in 30+ Days</div>`;
+    ov.forEach(c => {
+      const lc = lastCall(c.id);
+      const days = lc ? Math.floor((new Date() - new Date(lc.date)) / 86400000) : null;
+      html += `<div class="al">
+        <div class="al-t">
+          <strong>${esc(c.name)}</strong>
+          <span>${days ? days + ' days ago' : 'Never called'} · 📱 ${esc(c.mobile)}</span>
+        </div>
+        <button class="btn btn-p btn-s" onclick="openLog('${c.id}','${esc2(c.name)}')">📞 Call</button>
+      </div>`;
+    });
+    if (s.overdue + s.never > 5) {
+      html += `<div style="text-align:center;padding:8px;color:var(--muted);font-size:12px">...and ${s.overdue + s.never - 5} more. Check Alerts tab.</div>`;
+    }
+  }
+
+  document.getElementById('dash-alerts').innerHTML = html;
+}
+
+// ===================== MONTHLY CHART =====================
+function drawMonthly() {
+  const months = [];
+  const now = new Date();
+  // Start from April 2026
+  const startYear = 2026, startMonth = 3; // April = index 3
+  const curYear = now.getFullYear(), curMonth = now.getMonth();
+
+  let y = startYear, m = startMonth;
+  while (y < curYear || (y === curYear && m <= curMonth)) {
+    const ym = y + '-' + String(m+1).padStart(2,'0');
+    const label = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m] + ' ' + y;
+    const unique = new Set(callLogs.filter(l => l.date.slice(0,7) === ym).map(l => l.clientId)).size;
+    const pct = customers.length ? Math.round(unique / customers.length * 100) : 0;
+    const isCurrent = (y === curYear && m === curMonth);
+    months.push({label, unique, pct, isCurrent});
+    m++;
+    if (m > 11) { m = 0; y++; }
+  }
+
+  const cols = Math.min(months.length, 6);
+  let html = '<div class="st" style="margin-top:16px">📅 Monthly Call Progress (Apr 2026 onwards)</div>';
+  html += `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;margin-bottom:16px">`;
+  months.forEach(mo => {
+    html += `<div class="month-card ${mo.isCurrent ? 'current' : ''}">
+      <div style="font-size:10px;color:${mo.isCurrent ? 'var(--accent)' : 'var(--muted)'};text-transform:uppercase;font-weight:600;letter-spacing:.5px">${mo.label}${mo.isCurrent ? ' ●' : ''}</div>
+      <div style="font-size:24px;font-weight:700;margin:6px 0;color:var(--text)">${mo.unique}</div>
+      <div style="font-size:11px;color:var(--muted)">${mo.pct}% covered</div>
+      <div class="bar" style="margin-top:8px"><div class="bar-f" style="width:${mo.pct}%"></div></div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('dash-monthly').innerHTML = html;
+}
+
+// ===================== TABLE =====================
+function filteredData() {
+  let data = customers.slice();
+  // SEARCH — simple and reliable
+  if (srchVal) {
+    data = data.filter(c =>
+      (c.name || '').toLowerCase().includes(srchVal) ||
+      (c.mobile || '').toString().toLowerCase().includes(srchVal) ||
+      (c.email || '').toLowerCase().includes(srchVal)
+    );
+  }
+  // FILTER
+  if (fltVal === 'notinterested') {
+    data = data.filter(c => isNotInterested(c.id));
+  } else if (fltVal) {
+    data = data.filter(c => status(c.id) === fltVal);
+  }
+  // SORT
+  data.sort((a, b) => {
+    let av, bv;
+    if (sortC === 'last') { av = (lastCall(a.id)||{date:'0000'}).date; bv = (lastCall(b.id)||{date:'0000'}).date; }
+    else if (sortC === 'calls') { av = callLogs.filter(l=>l.clientId===a.id).length; bv = callLogs.filter(l=>l.clientId===b.id).length; }
+    else { av = a.name; bv = b.name; }
+    return av < bv ? -sortD : av > bv ? sortD : 0;
+  });
+  return data;
+}
+
+function drawTable() {
+  const data = filteredData();
+  const total = data.length;
+  const pages = Math.ceil(total / PG) || 1;
+  if (pg > pages) pg = pages;
+  const start = (pg-1)*PG;
+  const rows = data.slice(start, start+PG);
+
+  // Count label
+  document.getElementById('tbl-count').textContent =
+    srchVal ? `${total} results for "${srchVal}"` : `${total} of ${customers.length} clients`;
+
+  // Rows
+  if (!rows.length) {
+    document.getElementById('tbl-body').innerHTML = '<div class="empty"><div class="empty-i">🔍</div>No clients found</div>';
+  } else {
+    const s2col = {called:'b-g',due:'b-o',overdue:'b-r',never:'b-gray'};
+    const s2lbl = {called:'✅ Called',due:'⏰ Due',overdue:'🚨 Overdue',never:'❌ Never'};
+    const getBadge = (c, st) => {
+      if (isNotInterested(c.id)) return ['b-r', '🚫 Not Interested'];
+      return [s2col[st], s2lbl[st]];
+    };
+    document.getElementById('tbl-body').innerHTML =
+      '<table><thead><tr>' +
+      `<th onclick="srt('name')">Name${sortC==='name'?(sortD>0?' ▲':' ▼'):''}</th>` +
+      '<th>Mobile</th><th>Email</th>' +
+      `<th onclick="srt('last')">Last Call${sortC==='last'?(sortD>0?' ▲':' ▼'):''}</th>` +
+      `<th onclick="srt('calls')">Calls${sortC==='calls'?(sortD>0?' ▲':' ▼'):''}</th>` +
+      '<th>Status</th><th>Actions</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(c => {
+        const lc = lastCall(c.id);
+        const st = status(c.id);
+        const cnt = callLogs.filter(l=>l.clientId===c.id).length;
+        const fu = pendingFollowup(c.id);
+        return `<tr>
+          <td style="font-weight:500">${esc(c.name)}${fu?'<span title="Follow-up pending" style="margin-left:5px;font-size:11px;color:var(--orange)">🔔</span>':''}</td>
+          <td><a class="tel" href="tel:${esc(c.mobile)}">${esc(c.mobile)}</a></td>
+          <td class="mono">${esc(c.email)}</td>
+          <td class="mono">${lc?fmtD(lc.date):'—'}</td>
+          <td style="text-align:center">${cnt}</td>
+          <td><span class="badge ${getBadge(c,st)[0]}"><span class="dot"></span>${getBadge(c,st)[1]}</span></td>
+          <td><div style="display:flex;gap:5px">
+            <button class="btn btn-p btn-s" onclick="openLog('${c.id}','${esc2(c.name)}')">📞 Log</button>
+            <button class="btn btn-g btn-s" onclick="openHist('${c.id}','${esc2(c.name)}')">📋 History</button>
+            <button class="btn btn-g btn-s" onclick="openEditClient('${c.id}')">✏️ Edit</button>
+            <button class="btn btn-s" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca" onclick="deleteClient('${c.id}','${esc2(c.name)}')">🗑️</button>
+          </div></td>
+        </tr>`;
+      }).join('') +
+      '</tbody></table>';
+  }
+
+  // Pagination
+  let pgHtml = `<span class="pg-info">${total} clients · Page ${pg}/${pages}</span><div class="pg-btns">`;
+  pgHtml += `<button class="pb" onclick="goP(${pg-1})" ${pg<=1?'disabled':''}>‹ Prev</button>`;
+  const startP = Math.max(1, Math.min(pg-2, pages-4));
+  const endP = Math.min(pages, startP+4);
+  for (let i=startP; i<=endP; i++) {
+    pgHtml += `<button class="pb${i===pg?' on':''}" onclick="goP(${i})">${i}</button>`;
+  }
+  pgHtml += `<button class="pb" onclick="goP(${pg+1})" ${pg>=pages?'disabled':''}>Next ›</button></div>`;
+  document.getElementById('tbl-pg').innerHTML = pgHtml;
+}
+
+function srt(col) {
+  if (sortC === col) sortD *= -1;
+  else { sortC = col; sortD = 1; }
+  drawTable();
+}
+
+function goP(p) {
+  const pages = Math.ceil(filteredData().length / PG) || 1;
+  if (p < 1 || p > pages) return;
+  pg = p;
+  drawTable();
+}
+
+// ===================== ALERTS TAB =====================
+function drawAlerts() {
+  const fu = customers.filter(c => pendingFollowup(c.id));
+  const nv = customers.filter(c => status(c.id)==='never');
+  const ov = customers.filter(c => status(c.id)==='overdue');
+  let html = '';
+
+  html += `<div class="st">🔔 Follow-ups Pending (${fu.length})</div>`;
+  if (fu.length) {
+    fu.forEach(c => {
+      const f = pendingFollowup(c.id);
+      html += `<div class="al warn"><div class="al-t"><strong>${esc(c.name)}</strong><span>Due: ${fmtD(f.followup)} · ${esc(f.outcome)} · ${esc(f.notes||'No notes')}</span></div>
+        <button class="btn btn-p btn-s" onclick="openLog('${c.id}','${esc2(c.name)}')">📞 Call</button></div>`;
+    });
+  } else html += '<div class="al ok"><div class="al-t"><strong style="color:var(--green)">✅ No pending follow-ups</strong></div></div>';
+
+  html += `<div class="st" style="margin-top:18px">❌ Never Called (${nv.length})</div>`;
+  if (nv.length) {
+    nv.slice(0,30).forEach(c => {
+      html += `<div class="al"><div class="al-t"><strong>${esc(c.name)}</strong><span>📱 ${esc(c.mobile)}</span></div>
+        <button class="btn btn-p btn-s" onclick="openLog('${c.id}','${esc2(c.name)}')">📞 Call</button></div>`;
+    });
+    if (nv.length > 30) html += `<div style="padding:10px;text-align:center;color:var(--muted);font-size:13px">...and ${nv.length-30} more. Go to Clients tab to see all.</div>`;
+  } else html += '<div class="al ok"><div class="al-t"><strong style="color:var(--green)">✅ All clients have been called at least once!</strong></div></div>';
+
+  html += `<div class="st" style="margin-top:18px">🚨 Overdue — Not called in 30+ days (${ov.length})</div>`;
+  if (ov.length) {
+    ov.slice(0,30).forEach(c => {
+      const lc = lastCall(c.id);
+      const days = Math.floor((new Date()-new Date(lc.date))/86400000);
+      html += `<div class="al"><div class="al-t"><strong>${esc(c.name)}</strong><span>${days} days ago (${fmtD(lc.date)}) · 📱 ${esc(c.mobile)}</span></div>
+        <button class="btn btn-p btn-s" onclick="openLog('${c.id}','${esc2(c.name)}')">📞 Call</button></div>`;
+    });
+    if (ov.length > 30) html += `<div style="padding:10px;text-align:center;color:var(--muted);font-size:13px">...and ${ov.length-30} more.</div>`;
+  } else html += '<div class="al ok"><div class="al-t"><strong style="color:var(--green)">✅ No overdue clients!</strong></div></div>';
+
+  document.getElementById('alerts-content').innerHTML = html;
+}
+
+// ===================== TABS =====================
+function showTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.navbtn').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('on');
+  const tabMap = {dash:0, clients:1, alerts:2, calllog:3, db:4};
+  const navBtns = document.querySelectorAll('.navbtn');
+  if (tabMap[id] !== undefined) navBtns[tabMap[id]].classList.add('on');
+  if (id==='clients') drawTable();
+  if (id==='alerts') drawAlerts();
+  if (id==='db') updateDBStatus();
+  if (id==='calllog') { setLogDate('today'); }
+}
+
+// ===================== LOG MODAL =====================
+function openLog(cid, cname) {
+  logCid = cid;
+  document.getElementById('m-cname').textContent = cname;
+  document.getElementById('l-date').value = today();
+  document.getElementById('l-out').value = 'Completed';
+  document.getElementById('l-fu').value = '';
+  document.getElementById('l-notes').value = '';
+  document.getElementById('m-log').classList.add('open');
+}
+
+function saveLog() {
+  const date = document.getElementById('l-date').value;
+  if (!date) { toast('Please select a date','err'); return; }
+  const entry = {
+    id: Date.now() + Math.random(),
+    clientId: logCid,
+    date,
+    outcome: document.getElementById('l-out').value,
+    followup: document.getElementById('l-fu').value || null,
+    notes: document.getElementById('l-notes').value.trim(),
+    createdAt: new Date().toISOString()
+  };
+  callLogs.push(entry);
+  save();
+  closeM('m-log');
+  toast('✅ Call logged!','ok');
+  renderAll();
+}
+
+// ===================== HISTORY MODAL =====================
+function openHist(cid, cname) {
+  histCid = cid;
+  const c = customers.find(x=>x.id===cid);
+  document.getElementById('mh-name').textContent = cname;
+  document.getElementById('mh-info').textContent = `📱 ${c.mobile}  ·  ✉️ ${c.email}`;
+  document.getElementById('mh-log-btn').onclick = () => { closeM('m-hist'); openLog(cid, cname); };
+  renderHist(cid);
+  document.getElementById('m-hist').classList.add('open');
+}
+
+function renderHist(cid) {
+  const logs = callLogs.filter(l=>l.clientId===cid).sort((a,b)=>b.date.localeCompare(a.date));
+  if (!logs.length) {
+    document.getElementById('mh-entries').innerHTML = '<div class="empty"><div class="empty-i">📭</div>No calls logged yet</div>';
+    return;
+  }
+  document.getElementById('mh-entries').innerHTML = logs.map(l => `
+    <div class="he">
+      <div class="heh">
+        <span class="hed">${fmtD(l.date)}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge ${l.outcome==='Completed'?'b-g':l.outcome==='No Answer'?'b-gray':'b-o'}">${esc(l.outcome)}</span>
+          <button class="hdel" onclick="delLog(${JSON.stringify(l.id)})">🗑️</button>
+        </div>
+      </div>
+      ${l.followup?`<div style="font-size:12px;color:var(--orange);margin-bottom:4px">🔄 Follow-up: ${fmtD(l.followup)}</div>`:''}
+      <div class="hen">${esc(l.notes||'No notes')}</div>
+    </div>`).join('');
+}
+
+function delLog(id) {
+  if (!confirm('Delete this call entry?')) return;
+  callLogs = callLogs.filter(l => l.id !== id);
+  save();
+  renderHist(histCid);
+  renderAll();
+  toast('Entry deleted','inf');
+}
+
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => { if(e.target.classList.contains('ov')) closeM(e.target.id); });
+
+// ===================== DB SAVE/LOAD =====================
+function saveDB() {
+  const data = { version:1, exportedAt: new Date().toISOString(), customers, calls: callLogs };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'calltrack_db.json';
+  a.click();
+  toast('✅ Database saved!','ok');
+}
+
+function dropDB(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) readDBFile(f);
+}
+
+function loadDBFile(e) { if(e.target.files[0]) readDBFile(e.target.files[0]); }
+
+function readDBFile(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      let d = JSON.parse(e.target.result);
+      // Handle Firebase Console export: wraps data in a node key
+      if (!d.customers && !d.calls && typeof d === 'object') {
+        const keys = Object.keys(d);
+        for (const k of keys) {
+          if (d[k].customers && d[k].calls) { d = d[k]; break; }
+        }
+      }
+      if (!d.customers || !d.calls) throw new Error('Invalid file');
+      customers = d.customers;
+      callLogs = d.calls;
+      save();
+      renderAll();
+      toast(`✅ Loaded ${customers.length} customers & ${callLogs.length} call logs!`,'ok');
+      updateDBStatus();
+    } catch(err) {
+      toast('❌ Invalid DB file. Please use a file exported from this app.','err');
+    }
+  };
+  r.readAsText(file);
+}
+
+function updateDBStatus() {
+  const el = document.getElementById('db-status');
+  if (!el) return;
+  const tm = thisYM();
+  const calledThisMonth = new Set(callLogs.filter(l=>l.date.slice(0,7)===tm).map(l=>l.clientId)).size;
+  
+  let savePlace = '';
+  if (isFirebaseInitialized) {
+    savePlace = 'Data is synced in real-time to Firebase Cloud Database.';
+  } else {
+    savePlace = 'Data is saved locally in this browser. Configure Firebase to sync across PCs.';
+  }
+  
+  el.innerHTML = `<strong>${customers.length}</strong> customers · <strong>${callLogs.length}</strong> total call entries · <strong>${calledThisMonth}</strong> called this month<br>
+    <span style="color:var(--muted);font-size:12px;margin-top:4px;display:block">${savePlace} Use Download DB as an extra backup.</span>`;
+    
+  updateFirebaseStatusUI();
+}
+
+// ===================== IMPORT CUSTOMERS =====================
+function dropCust(e) {
+  e.preventDefault();
+  document.getElementById('dropzone2').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) readCustFile(f);
+}
+function loadCustFile(e) { if(e.target.files[0]) readCustFile(e.target.files[0]); }
+
+function readCustFile(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/).filter(l=>l.trim());
+    const hdrs = lines[0].split(',').map(h=>h.replace(/["\']/g,'').trim().toLowerCase());
+    const ni = hdrs.findIndex(h=>h.includes('name')||h.includes('group'));
+    const ei = hdrs.findIndex(h=>h.includes('email'));
+    const mi = hdrs.findIndex(h=>h.includes('mobile')||h.includes('phone'));
+    if (ni===-1) { toast('❌ Cannot find Name column','err'); return; }
+    const existing = new Set(customers.map(c=>c.name.toLowerCase()));
+    let added = 0;
+    for (let i=1; i<lines.length; i++) {
+      const cols = lines[i].split(',').map(c=>c.replace(/["\']/g,'').trim());
+      const name = cols[ni];
+      if (!name || existing.has(name.toLowerCase())) continue;
+      customers.push({id:'ci'+Date.now()+i, name, email:ei>=0?cols[ei]:'', mobile:mi>=0?cols[mi]:''});
+      added++;
+    }
+    save();
+    renderAll();
+    toast(`✅ Added ${added} new customers!`,'ok');
+  };
+  r.readAsText(file);
+}
+
+// ===================== EXPORT =====================
+function exportCSV() {
+  const data = filteredData();
+  const rows = [['Name','Mobile','Email','Last Call','Total Calls','Status']];
+  data.forEach(c => {
+    const lc = lastCall(c.id);
+    rows.push([c.name, c.mobile, c.email, lc?lc.date:'Never', callLogs.filter(l=>l.clientId===c.id).length, status(c.id)]);
+  });
+  const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'clients_'+today()+'.csv';
+  a.click();
+  toast('📤 CSV exported!','ok');
+}
+
+function clearCalls() {
+  if (!confirm('Delete ALL call logs? This cannot be undone.')) return;
+  if (!confirm('Are you sure? All call history will be lost.')) return;
+  callLogs = [];
+  save();
+  renderAll();
+  toast('Call logs cleared','inf');
+}
+
+// ===================== UTILS =====================
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc2(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"&#39;"); }
+
+function toast(msg, type='inf') {
+  const t = document.createElement('div');
+  t.className = 'toast '+type;
+  t.textContent = msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+
+// ===================== DAILY CALL LOG =====================
+function setLogDate(preset) {
+  const inp = document.getElementById('log-date-filter');
+  const now = new Date();
+  if (preset === 'today') {
+    inp.value = today();
+    inp.dataset.mode = 'day';
+  } else if (preset === 'yesterday') {
+    const y = new Date(now); y.setDate(y.getDate()-1);
+    inp.value = y.toISOString().slice(0,10);
+    inp.dataset.mode = 'day';
+  } else if (preset === 'week') {
+    inp.value = today();
+    inp.dataset.mode = 'week';
+  } else if (preset === 'month') {
+    inp.value = today();
+    inp.dataset.mode = 'month';
+  }
+  drawDailyLog();
+}
+
+function drawDailyLog() {
+  const inp = document.getElementById('log-date-filter');
+  const selDate = inp.value;
+  const mode = inp.dataset.mode || 'day';
+  if (!selDate) return;
+
+  // Determine date range
+  let dateFrom, dateTo;
+  if (mode === 'week') {
+    const d = new Date(selDate);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day===0?-6:1);
+    const mon = new Date(d.setDate(diff));
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    dateFrom = mon.toISOString().slice(0,10);
+    dateTo = sun.toISOString().slice(0,10);
+  } else if (mode === 'month') {
+    dateFrom = selDate.slice(0,7) + '-01';
+    const last = new Date(+selDate.slice(0,4), +selDate.slice(5,7), 0);
+    dateTo = last.toISOString().slice(0,10);
+  } else {
+    dateFrom = selDate;
+    dateTo = selDate;
+  }
+
+  // Filter logs in range
+  const logs = callLogs.filter(l => l.date >= dateFrom && l.date <= dateTo);
+
+  // Summary cards
+  const outcomes = {};
+  logs.forEach(l => { outcomes[l.outcome] = (outcomes[l.outcome]||0)+1; });
+  const uniqueClients = new Set(logs.map(l=>l.clientId)).size;
+  const completed = logs.filter(l=>l.outcome==='Completed').length;
+  const noAnswer = logs.filter(l=>l.outcome==='No Answer').length;
+  const followups = logs.filter(l=>l.followup).length;
+
+  const rangeLabel = mode==='day' ? fmtD(selDate) :
+    mode==='week' ? `${fmtD(dateFrom)} — ${fmtD(dateTo)}` :
+    selDate.slice(0,7);
+
+  document.getElementById('daily-summary').innerHTML = `
+    <div class="sc blue"><div class="sc-l">Total Calls</div><div class="sc-n">${logs.length}</div></div>
+    <div class="sc green"><div class="sc-l">Completed</div><div class="sc-n">${completed}</div></div>
+    <div class="sc red"><div class="sc-l">No Answer</div><div class="sc-n">${noAnswer}</div></div>
+    <div class="sc orange"><div class="sc-l">Follow-ups Set</div><div class="sc-n">${followups}</div></div>
+  `;
+
+  if (!logs.length) {
+    document.getElementById('daily-log-content').innerHTML = `
+      <div class="empty"><div class="empty-i">📭</div>No calls logged for ${rangeLabel}</div>`;
+    return;
+  }
+
+  // Group by date then list entries
+  const byDate = {};
+  logs.forEach(l => {
+    if (!byDate[l.date]) byDate[l.date] = [];
+    byDate[l.date].push(l);
+  });
+  const sortedDates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+
+  let html = `<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">${logs.length} call${logs.length!==1?'s':''} · ${uniqueClients} unique client${uniqueClients!==1?'s':''} · ${rangeLabel}</div>`;
+
+  sortedDates.forEach(date => {
+    const dayLogs = byDate[date].sort((a,b)=>b.createdAt?.localeCompare(a.createdAt||'')||0);
+    html += `<div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+        📅 ${fmtD(date)} <span style="font-weight:400;color:var(--muted);font-size:12px">(${dayLogs.length} call${dayLogs.length!==1?'s':''})</span>
+      </div>`;
+    dayLogs.forEach(l => {
+      const cust = customers.find(c=>c.id===l.clientId);
+      const outColor = l.outcome==='Completed'?'b-g':l.outcome==='No Answer'?'b-gray':'b-o';
+      html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-weight:600">${esc(cust?cust.name:'Unknown')}</span>
+            <span class="badge ${outColor}">${esc(l.outcome)}</span>
+            ${l.followup?`<span style="font-size:11px;color:var(--orange)">🔄 Follow-up: ${fmtD(l.followup)}</span>`:''}
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:${l.notes?'4px':'0'}">
+            📱 ${esc(cust?cust.mobile:'—')} &nbsp;·&nbsp; ✉️ ${esc(cust?cust.email:'—')}
+          </div>
+          ${l.notes?`<div style="font-size:13px;color:var(--text);background:var(--card2);border-radius:5px;padding:6px 10px;margin-top:6px">${esc(l.notes)}</div>`:''}
+        </div>
+        <button class="btn btn-p btn-s" style="flex-shrink:0" onclick="openLog('${l.clientId}','${esc2(cust?cust.name:'')}')">📞 Call Again</button>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  document.getElementById('daily-log-content').innerHTML = html;
+}
+
+function exportDailyCSV() {
+  const inp = document.getElementById('log-date-filter');
+  const selDate = inp.value;
+  const mode = inp.dataset.mode || 'day';
+  if (!selDate) { toast('Please select a date first','err'); return; }
+
+  let dateFrom, dateTo;
+  if (mode === 'week') {
+    const d = new Date(selDate);
+    const diff = d.getDate() - d.getDay() + (d.getDay()===0?-6:1);
+    const mon = new Date(d.setDate(diff));
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    dateFrom = mon.toISOString().slice(0,10);
+    dateTo = sun.toISOString().slice(0,10);
+  } else if (mode === 'month') {
+    dateFrom = selDate.slice(0,7)+'-01';
+    const last = new Date(+selDate.slice(0,4), +selDate.slice(5,7), 0);
+    dateTo = last.toISOString().slice(0,10);
+  } else { dateFrom = selDate; dateTo = selDate; }
+
+  const logs = callLogs.filter(l => l.date >= dateFrom && l.date <= dateTo)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+
+  const rows = [['Date','Client Name','Mobile','Email','Outcome','Follow-up Date','Notes']];
+  logs.forEach(l => {
+    const c = customers.find(x=>x.id===l.clientId);
+    rows.push([l.date, c?c.name:'Unknown', c?c.mobile:'', c?c.email:'', l.outcome, l.followup||'', l.notes||'']);
+  });
+  const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `calllog_${dateFrom}_${dateTo}.csv`;
+  a.click();
+  toast('📤 Call log exported!','ok');
+}
+
+// ===================== ADD / DELETE CLIENT =====================
+function openAddClient() {
+  document.getElementById('ac-name').value = '';
+  document.getElementById('ac-mobile').value = '';
+  document.getElementById('ac-email').value = '';
+  document.getElementById('m-addclient').classList.add('open');
+  setTimeout(() => document.getElementById('ac-name').focus(), 100);
+}
+
+function saveNewClient() {
+  const name   = document.getElementById('ac-name').value.trim().toUpperCase();
+  const mobile = document.getElementById('ac-mobile').value.trim();
+  const email  = document.getElementById('ac-email').value.trim().toLowerCase();
+
+  if (!name)   { toast('❌ Name is required', 'err'); return; }
+  if (!mobile) { toast('❌ Mobile number is required', 'err'); return; }
+
+  // Check duplicate
+  const exists = customers.find(c => c.name === name || c.mobile === mobile);
+  if (exists) { toast('❌ Client with same name or mobile already exists', 'err'); return; }
+
+  const newClient = {
+    id: 'c_' + Date.now() + '_' + Math.floor(Math.random()*10000),
+    name, mobile, email
+  };
+  customers.push(newClient);
+  save();
+  closeM('m-addclient');
+  toast('✅ Client added: ' + name, 'ok');
+  pg = 1;
+  srchVal = '';
+  document.getElementById('srch').value = '';
+  renderAll();
+}
+
+let editClientId = null;
+
+function openEditClient(cid) {
+  const c = customers.find(x => x.id === cid);
+  if (!c) return;
+  editClientId = cid;
+  document.getElementById('ec-name').value   = c.name   || '';
+  document.getElementById('ec-mobile').value = c.mobile || '';
+  document.getElementById('ec-email').value  = c.email  || '';
+  document.getElementById('ec-sub').textContent = 'Editing: ' + c.name;
+  document.getElementById('m-editclient').classList.add('open');
+  setTimeout(() => document.getElementById('ec-name').focus(), 100);
+}
+
+function saveEditClient() {
+  const name   = document.getElementById('ec-name').value.trim().toUpperCase();
+  const mobile = document.getElementById('ec-mobile').value.trim();
+  const email  = document.getElementById('ec-email').value.trim().toLowerCase();
+
+  if (!name)   { toast('❌ Name is required', 'err'); return; }
+  if (!mobile) { toast('❌ Mobile number is required', 'err'); return; }
+
+  // Check duplicate — allow same client but not another client with same name/mobile
+  const duplicate = customers.find(c => c.id !== editClientId && (c.name === name || c.mobile === mobile));
+  if (duplicate) { toast('❌ Another client already has this name or mobile', 'err'); return; }
+
+  const idx = customers.findIndex(c => c.id === editClientId);
+  if (idx === -1) { toast('❌ Client not found', 'err'); return; }
+
+  customers[idx].name   = name;
+  customers[idx].mobile = mobile;
+  customers[idx].email  = email;
+
+  save();
+  closeM('m-editclient');
+  toast('✅ Client updated: ' + name, 'ok');
+  renderAll();
+}
+
+function deleteClient(cid, cname) {
+  if (!confirm('Delete client: ' + cname + '?\nThis will also delete all their call history.')) return;
+  customers = customers.filter(c => c.id !== cid);
+  callLogs  = callLogs.filter(l => l.clientId !== cid);
+  save();
+  toast('🗑️ Client deleted: ' + cname, 'inf');
+  renderAll();
+}
+
+// ===================== START =====================
+function doSearch(val) {
+  srchVal = (val || '').trim().toLowerCase();
+  pg = 1;
+  drawTable();
+}
+
+init();
+</script>
+<script>
+// Force-clear old service worker cache so users always get latest files
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.unregister());
+    });
+  });
+}
+// Also delete any old Caches on startup
+if ('caches' in window) {
+  caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))));
+}
+</script>
+</body>
+</html>
